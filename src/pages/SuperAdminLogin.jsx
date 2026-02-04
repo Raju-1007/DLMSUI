@@ -71,9 +71,7 @@ export default function SuperAdminLogin() {
         loadCaptcha();
         return;
       }
-     localStorage.setItem("loginDetails", JSON.stringify(result.data));
-      // localStorage.setItem("token", result.data.token);
-      localStorage.setItem("role", result.data.role);
+       localStorage.setItem("loginDetails", JSON.stringify(result.data));
       showSuccess("Login Successful ✅");
       loginMock(role);
      

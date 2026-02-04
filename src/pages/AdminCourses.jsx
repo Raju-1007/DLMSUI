@@ -41,7 +41,7 @@ export default function AdminCourses() {
   const loadCourses = async () => {
     setLoading(true);
     try {
-      const res = await axios.get(import.meta.env.VITE_API_BASE_URL+"/api/courses/getCourseBystuedentId");
+      const res = await axios.get(import.meta.env.VITE_API_BASE_URL+"/content/getCourses");
       setCourses(res.data || []);
     } catch {
       // fallback dummy data
@@ -202,12 +202,12 @@ export default function AdminCourses() {
 
           <div className="admin-box">
             <div className="admin-top-row">
-              <button
+              {/* <button
                 className="admin-btn-primary"
                 onClick={openAddPopup}
               >
                 + Add Course
-              </button>
+              </button> */}
 
               <input
                 className="admin-search"
@@ -223,21 +223,21 @@ export default function AdminCourses() {
               <table className="admin-table">
                 <thead>
                   <tr>
-                    <th>Course ID</th>
-                    <th>Title</th>
-                    <th>Category</th>
-                    <th>Duration</th>
+                    <th>Subject ID</th>
+                    <th>subjectName</th>
+                    <th>PassScore</th>
+                    {/* <th>Duration</th>
                     <th>Syllabus</th>
-                    <th>Actions</th>
+                    <th>Actions</th> */}
                   </tr>
                 </thead>
                 <tbody>
                   {filtered.map((c) => (
                     <tr key={c.id}>
-                      <td>{c.courseId}</td>
-                      <td>{c.title}</td>
-                      <td>{c.category}</td>
-                      <td>{c.duration}</td>
+                      <td>{c.subjectId}</td>
+                      <td>{c.subjectName}</td>
+                      <td>{c.passScore}</td>
+                      {/* <td>{c.duration}</td>
                       <td>{c.syllabus}</td>
                       <td>
                         <button
@@ -252,7 +252,7 @@ export default function AdminCourses() {
                         >
                           Delete
                         </button>
-                      </td>
+                      </td> */}
                     </tr>
                   ))}
 

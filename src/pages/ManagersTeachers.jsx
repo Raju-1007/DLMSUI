@@ -35,7 +35,7 @@ export default function ManagersTeachers() {
   const loadTeachers = async () => {
     setLoading(true);
     try {
-      const res = await axios.get(import.meta.env.VITE_API_BASE_URL+"/api/admin/teachers");
+      const res = await axios.get(import.meta.env.VITE_API_BASE_URL+"/get/teacherData");
       setTeachers(res.data || []);
     } catch {
       // fallback data

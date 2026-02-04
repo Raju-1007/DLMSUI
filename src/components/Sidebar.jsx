@@ -206,6 +206,9 @@ export default function Sidebar() {
       { icon: <MdNotificationsNone />, label: "Notifications", to: "/notifications" },
       { icon: <MdHelpOutline />, label: "Help Desk", to: "/help" },
        { icon: <MdTimelapse />, label: " StudentAttendance", to: "/studentAttendance" },
+       { icon: <MdSchedule />, label: "MyTimetable", to: "/studenttimeTable" },
+
+       
 
     ]
   };

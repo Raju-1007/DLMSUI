@@ -296,10 +296,10 @@ export default function TeacherDashboard() {
 
 
   useEffect(() => {
-    teacherLoad();
-    getStudentIds();
-    getStudentAssignments();
-    loadAssignments();
+    // teacherLoad();
+    // getStudentIds();
+    // getStudentAssignments();
+    // loadAssignments();
   }, []);
 
   const teacherLoad = async () => {

@@ -4,17 +4,29 @@ import get from "lodash/get";
 
 /* ================= REQUEST INTERCEPTOR ================= */
 
+const PUBLIC_APIS = [
+  "/login/getloginData",
+  "/login/addloginData",
+  "/login/getRoles",
+  "/login/generate",
+  "/login/forgot-password",
+ 
+];
+
 axios.interceptors.request.use(
 
   (config) => {
+    if (PUBLIC_APIS.some(url => config.url?.includes(url))) {
+      return config;
+    }
     const login = JSON.parse(localStorage.getItem("loginDetails"));
     try {
-      const parsedData = login;
+      const parsedData = login.userDetails;
       if (parsedData?.token) {
         config.headers.Authorization = `Bearer ${parsedData.token}`;
       }
 
-      // Handle multipart upload globally
+      // Handle multipart upload globally 
       if (config.url?.includes("documents/uplods")) {
         config.headers["Content-Type"] = "multipart/form-data";
       }
@@ -29,27 +41,35 @@ axios.interceptors.request.use(
 
 axios.interceptors.response.use(
   (response) => {
-    console.log("inside response");
+    
     return response;
   },
   async (error) => {
-    console.log(error, "::::::::::::::inside error");
+   
 
     const originalConfig = error.config;
-    console.log(originalConfig, ":::::::::::::::::originalConfig")
+     console.log(error, "::::::::::::::inside error");
+    
+    
 
-    if (error.response?.status === 401 && !originalConfig?._retry) {
+    if (error.response?.status === 401 && !originalConfig?._retry &&!PUBLIC_APIS.some(url => originalRequest.url?.includes(url)) ){
       originalConfig._retry = true;
 
       try {
         const parsedData = JSON.parse(localStorage.getItem("loginDetails"));
 
-        console.log(parsedData, ":::::::: parsedData ::::::::");
+        console.log(parsedData, "::::::::::::::::::::::::: parsedData ::::::::");
 
-        if (!parsedData?.token) throw new Error("No token");
+        if (!parsedData.userDetails?.token) throw new Error("No token");
 
-        const rs = await axios.get(
-          `${import.meta.env.VITE_API_BASE_URL}/api/roles/token`
+        // 🔄 Call refresh token API
+        const res = await axios.get(
+          `${import.meta.env.VITE_API_BASE_URL}/login/refresh`,
+          {
+            headers: {
+              Authorization: `Bearer ${parsedData.token}`
+            }
+          }
         );
 
         const newToken = rs?.data?.data?.token;
@@ -67,10 +87,11 @@ axios.interceptors.response.use(
           return axios(originalConfig);
         }
 
-        throw new Error("Refresh failed");
+        throw new Error("Refresh  token failed");
 
       } catch (err) {
         localStorage.clear();
+         alert("Session expired. Please login again.");
         window.location.href = "/";
         return Promise.reject(err);
       }

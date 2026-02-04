@@ -5,13 +5,13 @@ export const loginUserThunk = createAsyncThunk(
   "auth/loginUserThunk",
   async (payload,{ rejectWithValue }) => {
     const res = await axios.post(
-      import.meta.env.VITE_API_BASE_URL+"/api/roles/getloginData",
+      import.meta.env.VITE_API_BASE_URL+"/login/getloginData",
       payload
     );
-    console.log(res,"=====================++++++++++++++++++")
      if (res.data.status === "error") {
         return rejectWithValue(res.data.message);
       }
+       localStorage.setItem("loginDetails", JSON.stringify(res.data));
 
     return res.data;
   }
@@ -27,6 +27,7 @@ const authSlice = createSlice({
     role: savedLogin?.role || null,
     loginId: savedLogin?.loginId || null,
     adhaar: savedLogin?.adhaar || null,
+    token:savedLogin?.token ||  null,
     loading: false
   },
 
@@ -43,6 +44,7 @@ const authSlice = createSlice({
         state.role = action.payload.role;
         state.loginId = action.payload.loginId;
         state.adhaar = action.payload.adhaar;
+        state.token=action.payload.token;
 
         // ✅ SAVE PERMANENTLY
         localStorage.setItem(

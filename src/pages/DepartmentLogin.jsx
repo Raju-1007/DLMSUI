@@ -25,7 +25,7 @@ export default function DepartmentLogin() {
   const loadRoles = async () => {
     try {
       const res = await axios.get(
-        import.meta.env.VITE_API_BASE_URL + "/api/roles/getRoles"
+        import.meta.env.VITE_API_BASE_URL + "/login/getRoles"
       );
       setRoles(res.data.filter(r => r !== "SUPER_ADMIN" && r !== "STUDENT"));
     } catch {}
@@ -89,7 +89,7 @@ export default function DepartmentLogin() {
 
     try {
       await axios.post(
-        import.meta.env.VITE_API_BASE_URL + "/api/roles/addloginData",
+        import.meta.env.VITE_API_BASE_URL + "/login/addloginData",
         {
           fullName: form.fullName,
           email: form.email,

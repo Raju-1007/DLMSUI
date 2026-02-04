@@ -35,31 +35,10 @@ const login=useSelector((state)=>state.auth.user);
     loadAverage();
     loadCourseCount();
     loadTimetable();
-  handleStudentChange();
       
      // Load all class schedules
   }, []);
    LoginActivity();
-const handleStudentChange = async () => {
-  const id = login.loginId;
-
-  try {
-    const res = await axios.get(
-      import.meta.env.VITE_API_BASE_URL+`/api/roles/student/${id}`
-    );
-
-    console.log(res.data, "data==================>");
-
-    // ✅ store properly in localStorage
-    localStorage.setItem(
-      "studentsInformation",
-      JSON.stringify(res.data)
-    );
-
-  } catch (error) {
-   showError("Error fetching student info", error);
-  }
-};
 
 
   const calendarRef = React.createRef();

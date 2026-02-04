@@ -27,8 +27,8 @@ const { showSuccess, showError } = useMessage();
       setLoading(true);
       try {
         const [studentRes, courseRes] = await Promise.all([
-          axios.get(import.meta.env.VITE_API_BASE_URL+"/api/roles/studentData"),
-          axios.get(import.meta.env.VITE_API_BASE_URL+"/api/courses/getCourses")
+          axios.get(import.meta.env.VITE_API_BASE_URL+"/login/studentData"),
+          axios.get(import.meta.env.VITE_API_BASE_URL+"/content/getCourses")
         ]);
 
         setData({

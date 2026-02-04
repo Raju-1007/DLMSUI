@@ -3007,6 +3007,7 @@ html, body {
   font-size: 14px;
 }
 
+
 /* Card around calendar */
 .tt-card {
   background: #fff;
@@ -3062,28 +3063,34 @@ html, body {
 .tt-popup-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.45);
+  background: rgba(0, 0, 0, 0.6); /* darker blur */
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 5000;
+  z-index: 9999;
+  backdrop-filter: blur(2px);
 }
 
 .tt-popup-box {
-  width: 560px;
+  width: 100%;
+  max-width: 620px;
+  max-height: 85vh;         /* 🔥 key fix */
   background: #fff;
-  border-radius: 6px;
+  border-radius: 10px;
   overflow: hidden;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+  display: flex;
+  flex-direction: column;
 }
 
 .tt-popup-header {
-  background: #063970;
+   background: #063970;
   color: #fff;
-  padding: 12px 18px;
+  padding: 14px 20px;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-shrink: 0;
 }
 
 .tt-popup-header-blue {
@@ -3096,12 +3103,15 @@ html, body {
 }
 
 .tt-popup-body {
-  padding: 18px 22px;
+   padding: 18px 22px;
+  overflow-y: auto;        /* 🔥 internal scroll */
+  flex: 1;
 }
 
 .tt-time-row {
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
   margin-bottom: 18px;
 }
 
@@ -3116,7 +3126,9 @@ html, body {
 .tt-desc-box {
   margin-bottom: 16px;
 }
-
+.tt-time-row.single {
+  grid-template-columns: 1fr;
+}
 .tt-remind {
   display: inline-flex;
   align-items: center;
@@ -3133,9 +3145,77 @@ html, body {
   background: #063970;
   color: #fff;
   border: none;
-  padding: 8px 20px;
-  border-radius: 4px;
+  padding: 10px 24px;
+  border-radius: 6px;
   cursor: pointer;
+  font-weight: 600;
+}
+
+.tt-save-btn:hover {
+  background: #052d5a;
+}
+/* Teacher container */
+.tt-teacher-sticky {
+   background: #f8fafc;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 18px;
+  margin: 20px 0;
+
+}
+
+/* Grid layout */
+.tt-teacher-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr; /* 2 columns */
+  gap: 14px 16px;
+  margin-top: 10px;
+}
+
+/* Single field */
+.tt-field {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Label (like START TIME label) */
+.tt-field span {
+  font-size: 12px;
+  font-weight: 600;
+  color: #6b7280;
+  margin-bottom: 4px;
+}
+
+/* Value (like input box look) */
+.tt-field p {
+  background: #ffffff;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  padding: 9px 10px;
+  font-size: 14px;
+  color: #111827;
+}
+
+/* Full width row */
+.tt-field.full {
+  grid-column: span 2;
+}
+.tt-popup-footer {
+  padding: 14px 20px;
+  border-top: 1px solid #e5e7eb;
+  background: #fafafa;
+  text-align: right;
+  flex-shrink: 0;
+}
+@media (max-width: 768px) {
+  .tt-popup-box {
+    width: 95%;
+    max-height: 90vh;
+  }
+
+  .tt-time-row {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* ======feedback pupup============================================== */
@@ -3161,6 +3241,7 @@ html, body {
   overflow: hidden;
   animation: fadeIn 0.25s ease;
 }
+
 
 .fb-header {
   background: #0047AB;
@@ -7807,3 +7888,243 @@ textarea {
   margin: 0;
 }
 
+
+
+/* ========update view profile==================== */
+
+/* ROW */
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  column-gap: 28px;
+  row-gap: 36px; /* 👈 vertical gap between rows */
+  margin-bottom: 10px; /* less needed now */
+  background-image: url("/images/blue-abstract-gradient-wave-wallpaper 1.png");
+}
+
+/* FIELD */
+.form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+/* LABEL */
+.form-group label {
+  margin-bottom: 12px;      /* 👈 gap below label */
+  font-size: 15px;
+  font-weight: 500;
+  color: #1f2a44;
+  column-gap: 1000px;
+}
+
+/* INPUTS & DROPDOWN */
+.form-group input,
+.form-group select,
+.form-group .columnInputBox {
+  height: 50px;
+  padding: 0 16px;
+  border: 1px solid #cfd8e3;
+  border-radius: 10px;
+  font-size: 15px;
+  background: #ffffff;
+}
+
+/* FOCUS */
+.form-group input:focus,
+.form-group .columnInputBox:focus {
+  border-color: #0b3a78;
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(11, 58, 120, 0.15);
+}
+
+/* BUTTON SPACING */
+.form-actions {
+  display: flex;
+  justify-content: center;
+  margin-top: 42px; /* 👈 space above button */
+}
+
+/* MOBILE */
+@media (max-width: 900px) {
+  .form-row {
+    grid-template-columns: 1fr;
+    row-gap: 28px;
+  }
+}
+
+
+
+/* ===========Admin Teacher profile_popup============================= */
+.admin-layout {
+  display: flex;
+  min-height: 100vh;
+}
+
+.admin-main {
+  flex: 1;
+  padding: 20px;
+  background: #f5f7fb;
+}
+
+.page-title {
+  font-size: 22px;
+  margin-bottom: 10px;
+}
+
+.search-box {
+  padding: 10px;
+  width: 300px;
+  margin-bottom: 15px;
+}
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+}
+
+.admin-table th, .admin-table td {
+  padding: 10px;
+  border-bottom: 1px solid #ddd;
+}
+
+.admin-table tr:hover {
+  background: #eef3ff;
+  cursor: pointer;
+}
+
+/* ===== MODAL ===== */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-card {
+  background: white;
+  width: 900px;
+  padding: 20px;
+  border-radius: 10px;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 50px;
+}
+
+.modal-header button {
+  background: none;
+  border: none;
+  font-size: 22px;
+  cursor: pointer;
+}
+
+.grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2,1fr);
+  gap: 10px;
+}
+
+.grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3,1fr);
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.modal-card input {
+  padding: 10px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  background: #f7fbff;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 15px;
+  gap: 10px;
+}
+
+.btn-primary {
+  background: #2563eb;
+  color: white;
+  padding: 8px 18px;
+  border: none;
+  border-radius: 6px;
+}
+
+.btn-secondary {
+  background: #e5e7eb;
+  padding: 8px 18px;
+  border: none;
+  border-radius: 6px;
+}
+
+/* ===teams========= */
+
+/* ================= TEAMS STYLE OVERRIDES ================= */
+
+/* Force events full width (no side-by-side squeeze) */
+.rbc-day-slot .rbc-event {
+  width: 100% !important;
+  left: 0 !important;
+  right: 0 !important;
+  margin: 2px 0 !important;
+
+  border-radius: 6px !important;
+  background-color: #2f6fad !important;
+  color: #fff !important;
+  border: none !important;
+  padding: 6px 8px !important;
+
+  box-sizing: border-box !important;
+  overflow: hidden !important;
+}
+
+/* Disable overlap behaviour completely */
+.rbc-day-slot .rbc-event.rbc-event-overlaps {
+  width: 100% !important;
+  left: 0 !important;
+}
+
+/* Stack same-time events vertically */
+.rbc-day-slot .rbc-events-container {
+  margin-right: 0 !important;
+}
+
+/* Event text – horizontal only */
+.rbc-event-content {
+  white-space: normal !important;   /* allow wrap by words */
+  word-break: keep-all !important;  /* ❌ no vertical letters */
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  line-height: 1.3 !important;
+}
+
+/* Hide default time label inside event (Teams hides it) */
+.rbc-event-label {
+  display: none !important;
+}
+
+/* Remove blue outline / focus */
+.rbc-event:focus,
+.rbc-event.rbc-selected {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Make grid clean like Teams */
+.rbc-timeslot-group {
+  border-bottom: 1px solid #e5e7eb !important;
+}
+
+/* Prevent event shrinking */
+.rbc-day-slot .rbc-event-content {
+  height: auto !important;
+}

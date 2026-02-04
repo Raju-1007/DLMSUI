@@ -3,11 +3,16 @@ import { Calendar, dayjsLocalizer } from "react-big-calendar";
 import dayjs from "dayjs";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 import { useSelector } from "react-redux";
+import { useMessage } from "../context/MessageContext";
+import { useLocation } from "react-router-dom";
+import axios from "axios";
 
 
 const localizer = dayjsLocalizer(dayjs);
 
 const Calnderview = () => {
+
+  const { showSuccess, showError } = useMessage();
   const [events, setEvents] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [showSchedulePopup, setShowSchedulePopup] = useState(false);
@@ -15,9 +20,10 @@ const Calnderview = () => {
  const [selectedEvent, setSelectedEvent] = useState(null);
 
  const [viewEvent, setViewEvent] = useState(null)
-
+  const location = useLocation();
 
  
+  let teacherDetails=location.state.data;
  const [studentsIds, setStudentsIds] = useState([]);
 
   const [form, setForm] = useState({
@@ -72,7 +78,7 @@ const Calnderview = () => {
   //   setEvents([
   //     ...events,
   //     {
-  //       title: "Meeting",
+  //       title: "Meeting", 
   //       start,
   //       end,
   //     },
@@ -101,23 +107,23 @@ const Calnderview = () => {
 };
 
 const handleSaveSchedule = async () => {
-  if (
-    !scheduleData.date ||
-    !scheduleData.startTime ||
-    !scheduleData.endTime
-  ) {
-    return showError("Please select date and time");
-  }
-
+  
   const payload = {
-    studentId: login.loginId, // 🔑 student based
+     
     date: scheduleData.date,
     startTime: scheduleData.startTime,
     endTime: scheduleData.endTime,
     description: scheduleData.description,
     duration: calculateDuration(),
     remind: scheduleData.remind,
+    teacherId:teacherDetails.tecaher_id,
+    teacherName:teacherDetails.tecaher_name,
+    department:teacherDetails.teacher_department,
+    subjects:teacherDetails.teacher_knows_Subjects,
+     classNames:teacherDetails.classNames
+
   };
+   console.log(payload,"payload::::::::::::::::");
  const calendarEvent = {
   title: "Meeting",
   start: dayjs(`${payload.date} ${payload.startTime}`).toDate(),
@@ -132,10 +138,9 @@ const handleSaveSchedule = async () => {
     // ✅ IMPORTANT: PUSH INTO ARRAY
     setEvents((prevEvents) => [...prevEvents, calendarEvent]);
 
-
-  try {
-    await axios.post(
-      import.meta.env.VITE_API_BASE_URL + "/api/student/meeting/schedule",
+  console.log("::::::::::::: :before  Axiouse::::::::::::::::::::::")
+  try { await axios.post(
+      import.meta.env.VITE_API_BASE_URL + "/notify/api/addMeetings",
       payload
     );
 
@@ -170,9 +175,12 @@ const getStudentIds = async () => {
 
   const handleScheduleChange = (e) => {
     const { name, value, type, checked } = e.target;
+
     setScheduleData((prev) => ({
+      
       ...prev,
       [name]: type === "checkbox" ? checked : value,
+      
     }));
   };
   const [scheduleData, setScheduleData] = useState({
@@ -180,9 +188,17 @@ const getStudentIds = async () => {
     startTime: "",
     endTime: "",
     description: "",
+    teacherDetails:"",
+    teacherId:"",
+    department:"",
+    Subject:"",
+    teacherEmail:"",
+    teacherPhone:"",
+    teacherClass:"",
+
     remind: false,
   });
-
+ 
   return (
     <>
       <div style={{ height: 500 }}>
@@ -253,31 +269,49 @@ const getStudentIds = async () => {
           <label className="tt-label">DURATION</label>
           <p>{calculateDuration() || "--"}</p>
         </div>
-        <div className="tt-time-row">
-  <div>
-    <label className="tt-label">STUDENT</label>
-    <select
-      name="studentId"
-      value={scheduleData.studentId}
-      onChange={handleScheduleChange}
-      className="tt-input"
-    >
-      <option value="">Select Student</option>
+       <div className="tt-time-row">
+  <div className="tt-teacher-sticky">
+    <label className="tt-label">TEACHER DETAILS</label>
 
-      {/* Logged-in student */}
-      <option value={login.loginid}>
-        My Self ({login.loginid})
-      </option>
+    <div className="tt-teacher-grid">
+      <div className="tt-field">
+        <span>Name</span>
+        <p>{teacherDetails.tecaher_name}</p>
+      </div>
 
-      {/* Other students */}
-      {studentsIds.map((stu) => (
-        <option key={stu.id} value={stu.id}>
-          {stu.fullName} ({stu.loginid})
-        </option>
-      ))}
-    </select>
+      <div className="tt-field">
+        <span>Teacher ID</span>
+        <p>{teacherDetails.tecaher_id}</p>
+      </div>
+
+      <div className="tt-field">
+        <span>Department</span>
+        <p>{teacherDetails.teacher_department}</p>
+      </div>
+
+      <div className="tt-field">
+        <span>Subject</span>
+        <p>{teacherDetails.teacher_knows_Subjects}</p>
+      </div>
+
+      <div className="tt-field">
+        <span>Email</span>
+        <p>{teacherDetails.teacher_Email}</p>
+      </div>
+
+      <div className="tt-field">
+        <span>Phone</span>
+        <p>{teacherDetails.teacher_phoneNumber}</p>
+      </div>
+
+      <div className="tt-field full">
+        <span>Class</span>
+        <p>{teacherDetails.classNames}</p>
+      </div>
+    </div>
   </div>
 </div>
+
 
 
         <div className="tt-desc-box">

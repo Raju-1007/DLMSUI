@@ -359,6 +359,7 @@ import { useSelector } from "react-redux";
 export default function MyTimetable() {
   const calendarRef = useRef(null);
   const { showSuccess, showError } = useMessage();
+ 
 
   const [events, setEvents] = useState([]);
   const [currentDate, setCurrentDate] = useState("");
@@ -419,8 +420,7 @@ export default function MyTimetable() {
   const loadTimetable = async () => {
     try {
       const res = await axios.get(
-        import.meta.env.VITE_API_BASE_URL +
-          `/api/admin/syllabus/student/${login.loginId}`
+        import.meta.env.VITE_API_BASE_URL +`/api/admin/syllabus/student/${login.loginId}`
       );
 
       // 🔑 remove duplicates
@@ -581,12 +581,12 @@ const getStudentIds = async () => {
           <div className="tt-top-row">
             <h2 className="tt-page-title">My Timetable &amp; Schedule</h2>
 
-             <button
+             {/* <button
               className="tt-schedule-btn"
               onClick={() => setShowSchedulePopup(true)}
             >
               Schedule My Timeline
-            </button> 
+            </button>  */}
           </div>
 
           {/* Main calendar card */}

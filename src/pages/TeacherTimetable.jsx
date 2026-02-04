@@ -1,164 +1,423 @@
 import React, { useEffect, useState } from "react";
+import { Calendar, dayjsLocalizer } from "react-big-calendar";
+import dayjs from "dayjs";
+import "react-big-calendar/lib/css/react-big-calendar.css";
+import axios from "axios";
+
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
-import Footer from "../components/Footer";
-import axios from "axios";
-import { useMessage } from "../context/MessageContext"; 
+import { useMessage } from "../context/MessageContext";
+import { useSelector } from "react-redux";
+
+const localizer = dayjsLocalizer(dayjs);
+function TeamsEvent({ event }) {
+  return (
+    <div
+      style={{
+        width: "100%",
+        height: "100%",
+        background: "#2f6fad",
+        color: "#fff",
+        borderRadius: "6px",
+        padding: "6px 8px",
+        boxSizing: "border-box",
+        overflow: "hidden",
+      }}
+    >
+      <div
+        style={{
+          fontSize: "13px",
+          fontWeight: 600,
+          whiteSpace: "normal",   // ✅ horizontal text
+          wordBreak: "keep-all",  // ❌ no vertical letters
+        }}
+      >
+        {event.title}
+      </div>
+    </div>
+  );
+}
+
+const eventStyleGetter = () => ({
+  style: {
+    width: "100%",
+    backgroundColor: "transparent",
+    border: "none",
+  },
+});
 
 
 export default function TeacherTimetable() {
-
   const { showSuccess, showError } = useMessage();
+  const login = useSelector((state) => state.auth.user);
 
-  const [timetable, setTimetable] = useState([]);
-  const [attendance, setAttendance] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [events, setEvents] = useState([]);
+  const [selectedEvent, setSelectedEvent] = useState(null);
+  const [showSchedulePopup, setShowSchedulePopup] = useState(false);
 
+  const [studentsIds, setStudentsIds] = useState([]);
+  const [classList, setClassList] = useState([]);
+
+  const [scheduleData, setScheduleData] = useState({
+    date: "",
+    startTime: "",
+    endTime: "",
+    studentId: "",
+    studentName: "",
+    classId: "",
+    className: "",
+    description: "",
+    remind: false,
+  });
+
+  /* ================= LOAD TIMETABLE ================= */
   useEffect(() => {
-     const login = JSON.parse(localStorage.getItem("loginDetails"));
-  console.log(login)
-  
+    if (!login?.userDetails?.loginid) return;
 
-    const load = async () => {
+    const loadTimetable = async () => {
       try {
+        const res = await axios.get(
+          `${import.meta.env.VITE_API_BASE_URL}/notify/api/getMappings`
+        );
 
-        const [ttRes, attRes] = await Promise.all([
-          axios.get(
-            import.meta.env.VITE_API_BASE_URL+`/api/admin/syllabus/timetable/${login.loginId}`
-          ),
-          axios.get(
-            import.meta.env.VITE_API_BASE_URL+`/api/admin/teacherAttendance/attendance/${login.loginId}`
-          )
-        ]);
+        const mappedEvents = res.data.map((item) => ({
+          id: item.id,
+          title: `${item.subjects} (${item.classNames})`,
+          start: dayjs(`${item.date} ${item.startTime}`).toDate(),
+          end: dayjs(`${item.date} ${item.endTime}`).toDate(),
+          description: item.description,
+          teacherName: item.teacherName,
+          department: item.department,
+        }));
 
-        setTimetable(ttRes.data || []);
-        setAttendance(attRes.data || []);
-      } catch(err) {
-       showError("Error loading teacher data", err);
+        setEvents(mappedEvents);
+      } catch (err) {
+        console.error(err);
       }
-      setLoading(false);
     };
 
-    load();
-  }, []);
+    loadTimetable();
+  }, [login]);
 
+  /* ================= LOAD STUDENTS & CLASSES ================= */
+  useEffect(() => {
+    if (!showSchedulePopup) return;
+
+    axios
+      .get(`${import.meta.env.VITE_API_BASE_URL}/login/login/studentData`)
+      .then((res) => setStudentsIds(res.data || []))
+      .catch(() => setStudentsIds([]));
+
+    // reset classes on popup open
+    setClassList([]);
+  }, [showSchedulePopup]);
+
+  /* ================= HANDLERS ================= */
+  const handleSelectEvent = (event) => {
+    setSelectedEvent(event);
+  };
+
+  const handleScheduleChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setScheduleData((prev) => ({
+      ...prev,
+      [name]: type === "checkbox" ? checked : value,
+    }));
+  };
+
+  const calculateDuration = () => {
+    if (!scheduleData.startTime || !scheduleData.endTime) return "--";
+    const start = dayjs(`2024-01-01 ${scheduleData.startTime}`);
+    const end = dayjs(`2024-01-01 ${scheduleData.endTime}`);
+    return `${end.diff(start, "minute")} minutes`;
+  };
+
+  const handleSaveSchedule = async () => {
+    const payload = {
+      ...scheduleData,
+      teacherId: login?.userDetails?.loginid,
+    };
+
+    console.log("FINAL PAYLOAD 👉", payload);
+
+    try {
+      await axios.post(
+        `${import.meta.env.VITE_API_BASE_URL}/notify/api/addStudentMeetings`,
+        payload
+      );
+      showSuccess("Meeting scheduled successfully");
+      setShowSchedulePopup(false);
+    } catch {
+      showError("Failed to schedule meeting");
+    }
+  };
+
+  /* ================= UI ================= */
   return (
-    <div>
-      <Navbar />
 
-      <div className="teacher-layout">
+
+
+    <>
+      <Navbar />
+      <div className="page-grid">
         <Sidebar />
 
-        <div className="teacher-main">
-          <h2 className="teacher-page-title">My Timetable & Attendance</h2>
-
-          {/* ================= TIMETABLE ================= */}
-          <div className="teacher-card">
-            <h3 className="tt-sub-title">Weekly Class Schedule</h3>
-
-            {loading ? (
-              <p>Loading…</p>
-            ) : (
-              <table className="tt-table">
-                <thead>
-                  <tr>
-                    <th>id</th>
-                    
-                    <th>tecaherName</th>
-                    <th>startTime</th>
-                    <th>endTime</th>
-                    <th>Date</th>
-                    <th>Subject</th>
-                    <th>Class</th>
-                    <th>syllabusTittle</th>
-                    <th>section</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {timetable.map((t) => (
-                    <tr key={t.id}>
-                      <td>{t.teacherId}</td>
-                       
-                        <td>{t.teacherName}</td>
-                         <td>{t.startTime}</td>
-                          <td>{t.endTime}</td>
-                      <td>{t.date}</td>
-                      <td>{t.subject}</td>
-                      <td>{t.className}</td>
-                      <td>{t.syllabusTitle}</td>
-                      <td>{t.section}</td>
-                    </tr>
-                  ))}
-
-                  {timetable.length === 0 && (
-                    <tr>
-                      <td colSpan={4} align="center">
-                        No timetable assigned
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            )}
+        <div className="tt-wrapper">
+          <div className="tt-top-row">
+            <h2 className="tt-page-title">Teacher Timetable</h2>
+            <button
+              className="tt-schedule-btn"
+              onClick={() => setShowSchedulePopup(true)}
+            >
+              Schedule My Timeline
+            </button>
           </div>
 
-          {/* ================= ATTENDANCE ================= */}
-          <div className="teacher-card mt-4">
-            <h3 className="tt-sub-title">My Attendance</h3>
+          <div className="tt-card" style={{ height: "650px" }}>
+           <Calendar
+  localizer={localizer}
+  events={events}
+  startAccessor="start"
+  endAccessor="end"
+  defaultView="week"
+  views={["week", "day", "agenda"]}
+  onSelectEvent={handleSelectEvent}
 
-            {loading ? (
-              <p>Loading…</p>
-            ) : (
-              <table className="tt-table">
-                <thead>
-                  <tr>
-                    <th>teacherId</th>
-                    <th>teacherName</th>
-                    <th>subject</th>
-                    <th>Date</th>
-                    <th>Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {attendance.map((a) => (
-                    <tr key={a.id}>
-                       <td>{a.teacherId}</td>
-                      <td>{a.teacherName}</td>
-                      <td>{a.subject}</td>
-                      <td>{a.date}</td>
+  /* 🔑 MAIN FIX */
+  dayLayoutAlgorithm="no-overlap"   // ⬅️ same time events stack vertically
+  timeslots={1}
+  step={30}
 
-                      <td>
-                        <span
-                          className={`att-badge ${
-                            a.status === "Present"
-                              ? "green"
-                              : a.status === "Absent"
-                              ? "red"
-                              : "yellow"
-                          }`}
-                        >
-                          {a.status}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
+  components={{ event: TeamsEvent }}
+  eventPropGetter={eventStyleGetter}
+/>
 
-                  {attendance.length === 0 && (
-                    <tr>
-                      <td colSpan={2} align="center">
-                        No attendance records
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            )}
           </div>
-
         </div>
       </div>
 
-      <Footer />
-    </div>
+      {/* ================= VIEW EVENT ================= */}
+      {selectedEvent && (
+        <div className="tt-popup-overlay">
+          <div className="tt-popup-box tt-view-box">
+            <div className="tt-popup-header tt-popup-header-blue">
+              <h3>{selectedEvent.title}</h3>
+              <span
+                className="tt-popup-close"
+                onClick={() => setSelectedEvent(null)}
+              >
+                ✕
+              </span>
+            </div>
+
+            <div className="tt-popup-body">
+              <div className="tt-time-row">
+                <div>
+                  <label className="tt-label">START</label>
+                  <p>{dayjs(selectedEvent.start).format("DD MMM YYYY hh:mm A")}</p>
+                </div>
+                <div>
+                  <label className="tt-label">END</label>
+                  <p>{dayjs(selectedEvent.end).format("DD MMM YYYY hh:mm A")}</p>
+                </div>
+              </div>
+
+              <div className="tt-desc-box">
+                <label className="tt-label">DESCRIPTION</label>
+                <p>{selectedEvent.description || "--"}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ================= SCHEDULE POPUP ================= */}
+      {showSchedulePopup && (
+        <div
+          className="tt-popup-overlay"
+          onClick={() => setShowSchedulePopup(false)}
+        >
+          <div className="tt-popup-box" onClick={(e) => e.stopPropagation()}>
+            <div className="tt-popup-header">
+              <h3>Schedule Meeting</h3>
+              <span
+                className="tt-popup-close"
+                onClick={() => setShowSchedulePopup(false)}
+              >
+                ✕
+              </span>
+            </div>
+
+            <div className="tt-popup-body">
+              {/* DATE */}
+              <div className="tt-time-row">
+                <div>
+                  <label className="tt-label">DATE</label>
+                  <input
+                    type="date"
+                    className="tt-input"
+                    value={scheduleData.date}
+                    onChange={(e) =>
+                      setScheduleData((p) => ({ ...p, date: e.target.value }))
+                    }
+                  />
+                </div>
+              </div>
+
+              {/* TIME */}
+              <div className="tt-time-row">
+                <div>
+                  <label className="tt-label">START TIME</label>
+                  <input
+                    type="time"
+                    className="tt-input"
+                    value={scheduleData.startTime}
+                    onChange={(e) =>
+                      setScheduleData((p) => ({
+                        ...p,
+                        startTime: e.target.value,
+                      }))
+                    }
+                  />
+                </div>
+                <div>
+                  <label className="tt-label">END TIME</label>
+                  <input
+                    type="time"
+                    className="tt-input"
+                    value={scheduleData.endTime}
+                    onChange={(e) =>
+                      setScheduleData((p) => ({
+                        ...p,
+                        endTime: e.target.value,
+                      }))
+                    }
+                  />
+                </div>
+              </div>
+
+              {/* DURATION */}
+              <div className="tt-duration">
+                <label className="tt-label">DURATION</label>
+                <p>{calculateDuration()}</p>
+              </div>
+
+              {/* STUDENT */}
+              <div className="tt-time-row">
+                <div>
+                  <label className="tt-label">STUDENT</label>
+                  <select
+                    className="tt-input"
+                    value={scheduleData.studentId}
+                    onChange={(e) => {
+                      const id = e.target.value;
+                      const s = studentsIds.find(
+                        (x) => String(x.loginid) === id
+                      );
+
+                      setScheduleData((p) => ({
+                        ...p,
+                        studentId: s?.loginid || "",
+                        studentName: s?.fullName || "",
+                        classId: "",
+                        className: "",
+                      }));
+
+                      if (id) {
+                        axios
+                          .get(
+                            `${import.meta.env.VITE_API_BASE_URL}/login/login/getClassDetails/${id}`
+                          )
+                          .then((res) =>
+                            setClassList(res.data ? [res.data] : [])
+                          )
+                          .catch(() => setClassList([]));
+                      }
+                    }}
+                  >
+                    <option value="">Select Student</option>
+                    {studentsIds.map((s) => (
+                      <option key={s.loginid} value={s.loginid}>
+                        {s.fullName}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* CLASS */}
+              <div className="tt-time-row">
+                <div>
+                  <label className="tt-label">CLASS</label>
+                  <select
+                    className="tt-input"
+                    value={scheduleData.classId}
+                    disabled={!classList.length}
+                    onChange={(e) => {
+                      const selectedId = e.target.value;
+
+                      const c = classList.find(
+                        (x) => String(x.classId) === selectedId
+                      );
+
+                      setScheduleData((p) => ({
+                        ...p,
+                        classId: c?.classId || "",
+                        className: c?.className || "",
+                      }));
+                    }}
+                  >
+                    <option value="">Select Class</option>
+                    {classList.map((c) => (
+                      <option key={c.classId} value={c.classId}>
+                        {c.className}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+
+              {/* DESCRIPTION */}
+              <div className="tt-desc-box">
+                <label className="tt-label">DESCRIPTION</label>
+                <textarea
+                  className="tt-textarea"
+                  value={scheduleData.description}
+                  onChange={(e) =>
+                    setScheduleData((p) => ({
+                      ...p,
+                      description: e.target.value,
+                    }))
+                  }
+                />
+              </div>
+
+              {/* REMIND */}
+              <label className="tt-remind">
+                <input
+                  type="checkbox"
+                  checked={scheduleData.remind}
+                  onChange={(e) =>
+                    setScheduleData((p) => ({
+                      ...p,
+                      remind: e.target.checked,
+                    }))
+                  }
+                />
+                Remind Me
+              </label>
+
+              <div className="tt-popup-footer">
+                <button className="tt-save-btn" onClick={handleSaveSchedule}>
+                  Save Meeting
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+
   );
 }

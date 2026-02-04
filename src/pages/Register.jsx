@@ -81,7 +81,7 @@ export default function Register() {
 
     try {
       const result = await axios.post(
-        import.meta.env.VITE_API_BASE_URL + "/api/roles/addloginData",
+        import.meta.env.VITE_API_BASE_URL + "/login/addloginData",
         {
           role,
           password,
@@ -94,6 +94,7 @@ export default function Register() {
       );
 
       if (result && result.data) {
+         localStorage.setItem("studentsInformation",JSON.stringify(result.data));
         showSuccess("Registered successfully!");
         nav("/");
       }

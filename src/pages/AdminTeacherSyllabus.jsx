@@ -38,7 +38,7 @@ export default function AdminTeacherSyllabus() {
     setLoading(true);
     try {
       const res = await axios.get(
-        import.meta.env.VITE_API_BASE_URL+"/api/admin/syllabus"
+        import.meta.env.VITE_API_BASE_URL+"/notify/api/getMappings"
       );
       setItems(res.data || []);
     } catch (error) {
@@ -49,17 +49,7 @@ export default function AdminTeacherSyllabus() {
   };
 
   // ---------------- LOAD TEACHERS ----------------
-  const loadTeachers = async () => {
-    try {
-      const res = await axios.get(
-        import.meta.env.VITE_API_BASE_URL+"/api/admin/users/teachers"
-      );
-      setTeachers(res.data || []);
-    } catch (error) {
-     showError("Error loading teachers", error);
-    }
-  };
-
+ 
   // ---------------- POPUP HANDLERS ----------------
   const openAddPopup = () => {
     setEditing(false);
@@ -76,14 +66,13 @@ export default function AdminTeacherSyllabus() {
       startTime: "",
       endTime: ""
     });
-    loadTeachers();
     setShowPopup(true);
   };
 
   const openEditPopup = (item) => {
     setEditing(true);
     setForm(item);
-    loadTeachers();
+   
     setShowPopup(true);
   };
 
@@ -185,9 +174,9 @@ export default function AdminTeacherSyllabus() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
-            <button className="admin-add-btn" onClick={openAddPopup}>
+            {/* <button className="admin-add-btn" onClick={openAddPopup}>
               + Assign Syllabus
-            </button>
+            </button> */}
           </div>
 
           {/* TABLE */}
@@ -202,8 +191,8 @@ export default function AdminTeacherSyllabus() {
                     <th>Teacher Name</th>
                     <th>Subject</th>
                     <th>Class</th>
-                    <th>Section</th>
-                    <th>Title</th>
+                    
+                    <th>department</th>
                     <th>Date</th>
                     <th>Start</th>
                     <th>End</th>
@@ -217,9 +206,9 @@ export default function AdminTeacherSyllabus() {
                       (
                         i.teacherName +
                         i.teacherId +
-                        i.subject +
-                        i.className +
-                        i.section
+                        i.subjects +
+                        i.classNames 
+                        
                       )
                         .toLowerCase()
                         .includes(search.toLowerCase())
@@ -228,10 +217,10 @@ export default function AdminTeacherSyllabus() {
                       <tr key={i.id}>
                         <td>{i.teacherId}</td>
                         <td>{i.teacherName}</td>
-                        <td>{i.subject}</td>
-                        <td>{i.className}</td>
-                        <td>{i.section}</td>
-                        <td>{i.syllabusTitle}</td>
+                        <td>{i.subjects}</td>
+                        <td>{i.classNames}</td>
+                    
+                        <td>{i.department}</td>
                         <td>{i.date}</td>
                         <td>{i.startTime}</td>
                         <td>{i.endTime}</td>
