@@ -6,6 +6,8 @@ import { useSelector } from "react-redux";
 import { useMessage } from "../context/MessageContext";
 import { useLocation } from "react-router-dom";
 import axios from "axios";
+import Sidebar from "../components/Sidebar";
+import Navbar from "../components/Navbar";
 
 
 const localizer = dayjsLocalizer(dayjs);
@@ -200,7 +202,11 @@ const getStudentIds = async () => {
   });
  
   return (
+   
     <>
+     <Navbar />
+     <div style={{ display: "grid", gridTemplateColumns: "250px 1fr" }}>
+     <Sidebar />
       <div style={{ height: 500 }}>
         <Calendar
           localizer={localizer}
@@ -408,6 +414,7 @@ const getStudentIds = async () => {
     </div>
   </div>
 )}
+</div>
 
     </>
   );

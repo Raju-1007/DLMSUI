@@ -196,7 +196,7 @@ export default function AdminTeacherSyllabus() {
                     <th>Date</th>
                     <th>Start</th>
                     <th>End</th>
-                    <th>Actions</th>
+                    {/* <th>Actions</th> */}
                   </tr>
                 </thead>
 
@@ -224,8 +224,8 @@ export default function AdminTeacherSyllabus() {
                         <td>{i.date}</td>
                         <td>{i.startTime}</td>
                         <td>{i.endTime}</td>
-                        <td>
-                          <button
+                        {/* <td> */}
+                          {/* <button
                             className="admin-action-btn edit"
                             onClick={() => openEditPopup(i)}
                           >
@@ -236,14 +236,14 @@ export default function AdminTeacherSyllabus() {
                             onClick={() => deleteItem(i.id)}
                           >
                             Delete
-                          </button>
+                          </button> */}
                           {/* <button
                             className="admin-action-btn attendance"
                             onClick={() => handleAttendance(i)}
                           >
                             Attendance
                           </button> */}
-                        </td>
+                        {/* </td> */}
                       </tr>
                     ))}
                 </tbody>

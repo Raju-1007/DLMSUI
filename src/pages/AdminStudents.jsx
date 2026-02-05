@@ -27,8 +27,8 @@ const { showSuccess, showError } = useMessage();
       setLoading(true);
       try {
         const [studentRes, courseRes] = await Promise.all([
-          axios.get(import.meta.env.VITE_API_BASE_URL+"/login/studentData"),
-          axios.get(import.meta.env.VITE_API_BASE_URL+"/content/getCourses")
+          axios.get(import.meta.env.VITE_API_BASE_URL+"/login/login/studentData"),
+          axios.get(import.meta.env.VITE_API_BASE_URL+"/login/login/getStudentWithClassDetails")
         ]);
 
         setData({
@@ -47,10 +47,13 @@ const { showSuccess, showError } = useMessage();
   }, []);
 
   // ================= FRONTEND JOIN (studentId match) =================
+
+
   const combinedStudents = data.students.map((stu) => {
     const matchedCourses = data.courses.filter(
-      (c) => String(c.studentId) === String(stu.loginid)
+      (c) => String(c.studentid) === String(stu.loginid)
     );
+    
 
     return {
       studentId: stu.loginid,
@@ -105,7 +108,7 @@ const { showSuccess, showError } = useMessage();
                     <th>Student ID</th>
                     <th>Name</th>
                     <th>Class</th>
-                    <th>Section</th>
+                    {/* <th>Section</th> */}
                     <th>Email</th>
                     <th>Enrolled Courses</th>
                     <th>Status</th>
@@ -121,16 +124,16 @@ const { showSuccess, showError } = useMessage();
                       {/* CLASS (DEDUPLICATED) */}
                       <td>
                         {uniqueValues(
-                          s.courses.map((c) => c.className)
+                          s.courses.map((c) => c.class_name)
                         ).join(", ") || "-"}
                       </td>
 
                       {/* SECTION (DEDUPLICATED) */}
-                      <td>
+                      {/* <td>
                         {uniqueValues(
                           s.courses.map((c) => c.sectionName)
                         ).join(", ") || "-"}
-                      </td>
+                      </td> */}
 
                       <td>{s.email}</td>
 
