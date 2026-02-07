@@ -3,12 +3,13 @@ import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 import Footer from "../components/Footer";
 import axios from "axios";
-import { useMessage } from "../context/MessageContext"; 
+import { useMessage } from "../context/MessageContext";
+
 export default function AdminTeacherSyllabus() {
+
   const { showSuccess, showError } = useMessage();
 
   const [items, setItems] = useState([]);
-  const [teachers, setTeachers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
 
@@ -16,144 +17,82 @@ export default function AdminTeacherSyllabus() {
   const [editing, setEditing] = useState(false);
 
   const [form, setForm] = useState({
-    id: "",
-    teacherId: "",
-    teacherName: "",
-    subject: "",
-    className: "",
-    section: "",
-    syllabusTitle: "",
-    description: "",
-    date: "",
+    timingId: "",
+    dayOfWeek: "",
+    classId: "",
+    subjectId: "",
     startTime: "",
     endTime: ""
   });
 
-  // ---------------- LOAD SYLLABUS ----------------
+  /* ---------------- LOAD ACADEMIC TIMETABLE ---------------- */
   useEffect(() => {
-    loadSyllabus();
+    loadTimeTable();
   }, []);
 
-  const loadSyllabus = async () => {
+  const loadTimeTable = async () => {
     setLoading(true);
     try {
       const res = await axios.get(
-        import.meta.env.VITE_API_BASE_URL+"/notify/api/getMappings"
+        `${import.meta.env.VITE_API_BASE_URL}/content/teachertimeTableDetails`
       );
       setItems(res.data || []);
     } catch (error) {
-     showError("Error loading syllabus", error);
-      setItems([]);
+      showError("Error loading academic timetable");
     }
     setLoading(false);
   };
 
-  // ---------------- LOAD TEACHERS ----------------
- 
-  // ---------------- POPUP HANDLERS ----------------
-  const openAddPopup = () => {
-    setEditing(false);
-    setForm({
-      id: "",
-      teacherId: "",
-      teacherName: "",
-      subject: "",
-      className: "",
-      section: "",
-      syllabusTitle: "",
-      description: "",
-      date: "",
-      startTime: "",
-      endTime: ""
-    });
-    setShowPopup(true);
-  };
-
+  /* ---------------- POPUP HANDLERS ---------------- */
   const openEditPopup = (item) => {
     setEditing(true);
     setForm(item);
-   
     setShowPopup(true);
   };
 
-  const closePopup = () => setShowPopup(false);
-
-  // ---------------- SAVE ----------------
-  const save = async () => {
-    if (
-      !form.teacherId ||
-      !form.subject ||
-      !form.className ||
-      !form.section ||
-      !form.syllabusTitle ||
-      !form.date ||
-      !form.startTime ||
-      !form.endTime
-    ) {
-      showError("pleasefill all required fields");
-      return;
-    }
-
-    if (editing) {
-      try {
-        await axios.put(
-          import.meta.env.VITE_API_BASE_URL+`/api/admin/syllabus/${form.id}`,
-          form
-        );
-      } catch (error) {
-        showError("Update failed", error);
-      }
-      setItems(prev =>
-        prev.map(i => (i.id === form.id ? form : i))
-      );
-      showSuccess("Syllabus Updated ✔");
-    } else {
-      const entry = { ...form, id: Date.now() };
-      try {
-        await axios.post(
-          import.meta.env.VITE_API_BASE_URL+"/api/admin/syllabus",
-          entry
-        );
-      } catch (error) {
-        showError("Create failed", error);
-      }
-      setItems(prev => [...prev, entry]);
-      showSuccess("Syllabus Assigned ✔");
-    }
-
-    closePopup();
+  const closePopup = () => {
+    setShowPopup(false);
+    setEditing(false);
   };
 
-  // ---------------- DELETE SYLLABUS ----------------
-  const deleteItem = async (id) => {
-    if (!window.confirm("Are you sure you want to delete syllabus?")) return;
+  /* ---------------- UPDATE ---------------- */
+  const save = async () => {
+    try {
+      await axios.put(
+        `${import.meta.env.VITE_API_BASE_URL}/content/teachertimeTableDetails/${form.timingId}`,
+        form
+      );
+
+      setItems(prev =>
+        prev.map(i => i.timingId === form.timingId ? form : i)
+      );
+
+      showSuccess("Timetable Updated ✔");
+      closePopup();
+
+    } catch (error) {
+      showError("Update failed");
+    }
+  };
+
+  /* ---------------- DELETE ---------------- */
+  const deleteItem = async (timingId) => {
+    if (!window.confirm("Delete this timetable entry?")) return;
 
     try {
       await axios.delete(
-        import.meta.env.VITE_API_BASE_URL+`/api/admin/syllabus/${id}`
+        `${import.meta.env.VITE_API_BASE_URL}/content/teachertimeTableDetails/${timingId}`
       );
+
+      setItems(prev => prev.filter(i => i.timingId !== timingId));
+      showSuccess("Timetable Deleted ✔");
+
     } catch (error) {
-     showError("Delete failed", error);
+      showError("Delete failed");
     }
-
-    setItems(prev => prev.filter(i => i.id !== id));
   };
 
-  // ---------------- ATTENDANCE ----------------
-  const handleAttendance = (item) => {
-    localStorage.setItem(
-      "attendanceTeacher",
-      JSON.stringify({
-        teacherId: item.teacherId,
-        teacherName: item.teacherName,
-        subject: item.subject,
-        className: item.className,
-        section: item.section
-      })
-    );
-    window.location.href = "/admin/teacher-attendance";
-  };
-
+  /* ---------------- UI ---------------- */
   return (
     <div>
       <Navbar />
@@ -163,20 +102,17 @@ export default function AdminTeacherSyllabus() {
 
         <div className="admin-main">
           <h2 className="admin-page-title">
-            Teacher Syllabus Management
+            Academic Year TimeTable Management
           </h2>
 
-          {/* SEARCH + ADD */}
+          {/* SEARCH */}
           <div className="admin-top-actions">
             <input
               className="admin-search"
-              placeholder="Search by Teacher / Subject / Class / Section"
+              placeholder="Search by Day / Class ID / Subject ID"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
-            {/* <button className="admin-add-btn" onClick={openAddPopup}>
-              + Assign Syllabus
-            </button> */}
           </div>
 
           {/* TABLE */}
@@ -187,16 +123,13 @@ export default function AdminTeacherSyllabus() {
               <table className="admin-table">
                 <thead>
                   <tr>
-                    <th>Teacher ID</th>
-                    <th>Teacher Name</th>
-                    <th>Subject</th>
-                    <th>Class</th>
-                    
-                    <th>department</th>
-                    <th>Date</th>
+                    <th>Day</th>
+                    <th>Class ID</th>
+                    <th>Subject ID</th>
                     <th>Start</th>
                     <th>End</th>
-                    {/* <th>Actions</th> */}
+                    <th>Duration</th>
+                    <th>Actions</th>
                   </tr>
                 </thead>
 
@@ -204,28 +137,23 @@ export default function AdminTeacherSyllabus() {
                   {items
                     .filter(i =>
                       (
-                        i.teacherName +
-                        i.teacherId +
-                        i.subjects +
-                        i.classNames 
-                        
+                        i.dayOfWeek +
+                        i.classId +
+                        i.subjectId
                       )
                         .toLowerCase()
                         .includes(search.toLowerCase())
                     )
                     .map(i => (
-                      <tr key={i.id}>
-                        <td>{i.teacherId}</td>
-                        <td>{i.teacherName}</td>
-                        <td>{i.subjects}</td>
-                        <td>{i.classNames}</td>
-                    
-                        <td>{i.department}</td>
-                        <td>{i.date}</td>
+                      <tr key={i.timingId}>
+                        <td>{i.dayOfWeek}</td>
+                        <td>{i.classId}</td>
+                        <td>{i.subjectId}</td>
                         <td>{i.startTime}</td>
                         <td>{i.endTime}</td>
-                        {/* <td> */}
-                          {/* <button
+                        <td>{i.durationMinutes} mins</td>
+                        <td>
+                          <button
                             className="admin-action-btn edit"
                             onClick={() => openEditPopup(i)}
                           >
@@ -233,20 +161,15 @@ export default function AdminTeacherSyllabus() {
                           </button>
                           <button
                             className="admin-action-btn delete"
-                            onClick={() => deleteItem(i.id)}
+                            onClick={() => deleteItem(i.timingId)}
                           >
                             Delete
-                          </button> */}
-                          {/* <button
-                            className="admin-action-btn attendance"
-                            onClick={() => handleAttendance(i)}
-                          >
-                            Attendance
-                          </button> */}
-                        {/* </td> */}
+                          </button>
+                        </td>
                       </tr>
                     ))}
                 </tbody>
+
               </table>
             )}
           </div>
@@ -257,77 +180,20 @@ export default function AdminTeacherSyllabus() {
       {showPopup && (
         <div className="admin-overlay" onClick={closePopup}>
           <div className="admin-popup" onClick={(e) => e.stopPropagation()}>
+
             <div className="admin-popup-header">
-              <h3>{editing ? "Edit Syllabus" : "Assign Syllabus"}</h3>
+              <h3>Edit Timetable</h3>
               <span onClick={closePopup}>✕</span>
             </div>
 
-            <label>Teacher</label>
-            <select
-              value={form.teacherId}
-              onChange={(e) => {
-                const id = e.target.value;
-                const t = teachers.find(
-                  x => String(x.loginid) === id
-                );
-                setForm({
-                  ...form,
-                  teacherId: id,
-                  teacherName: t ? t.fullName : ""
-                });
-              }}
-            >
-              <option value="">Select Teacher</option>
-              {teachers.map(t => (
-                <option key={t.loginid} value={t.loginid}>
-                  {t.fullName} (ID: {t.loginid})
-                </option>
-              ))}
-            </select>
+            <label>Day</label>
+            <input value={form.dayOfWeek} readOnly />
 
-            <label>Teacher Name</label>
-            <input value={form.teacherName} readOnly />
+            <label>Class ID</label>
+            <input value={form.classId} readOnly />
 
-            <label>Subject</label>
-            <input
-              value={form.subject}
-              onChange={(e) =>
-                setForm({ ...form, subject: e.target.value })
-              }
-            />
-
-            <label>Class</label>
-            <input
-              value={form.className}
-              onChange={(e) =>
-                setForm({ ...form, className: e.target.value })
-              }
-            />
-
-            <label>Section</label>
-            <input
-              value={form.section}
-              onChange={(e) =>
-                setForm({ ...form, section: e.target.value })
-              }
-            />
-
-            <label>Syllabus Title</label>
-            <input
-              value={form.syllabusTitle}
-              onChange={(e) =>
-                setForm({ ...form, syllabusTitle: e.target.value })
-              }
-            />
-
-            <label>Date</label>
-            <input
-              type="date"
-              value={form.date}
-              onChange={(e) =>
-                setForm({ ...form, date: e.target.value })
-              }
-            />
+            <label>Subject ID</label>
+            <input value={form.subjectId} readOnly />
 
             <label>Start Time</label>
             <input
@@ -349,10 +215,9 @@ export default function AdminTeacherSyllabus() {
 
             <div className="admin-popup-actions">
               <button className="button" onClick={closePopup}>Cancel</button>
-              <button  className="button" onClick={save}>
-                {editing ? "Update" : "Assign"}
-              </button>
+              <button className="button" onClick={save}>Update</button>
             </div>
+
           </div>
         </div>
       )}

@@ -32,7 +32,7 @@ export default function UpdateProfile() {
   /* ================= FETCHERS ================= */
 
   const fetchDistricts = async () => {
-    const res = await axios.get("http://localhost:8080/login/getDistricts");
+    const res = await axios.get("http://localhost:8080/login/login/getDistricts");
     return res.data.map(d => ({
       label: d.districtName,
       value: d.districId
@@ -42,7 +42,7 @@ export default function UpdateProfile() {
   const fetchMandals = async () => {
     if (!formData.district) return [];
     const res = await axios.get(
-      "http://localhost:8080/login/getMandals",
+      "http://localhost:8080/login/login/getMandals",
       { params: { districId: formData.district.value } }
     );
     return res.data.map(m => ({
@@ -54,7 +54,7 @@ export default function UpdateProfile() {
   const fetchVillages = async () => {
     if (!formData.mandal) return [];
     const res = await axios.get(
-      "http://localhost:8080/login/getVillages",
+      "http://localhost:8080/login/login/getVillages",
       { params: { mandalId: formData.mandal.value } }
     );
     return res.data.map(v => ({
@@ -66,7 +66,7 @@ export default function UpdateProfile() {
   const fetchSchools = async () => {
     if (!formData.district || !formData.mandal || !formData.village) return [];
     const res = await axios.get(
-      "http://localhost:8080/login/getSchools",
+      "http://localhost:8080/login/login/getSchools",
       {
         params: {
           districtId: formData.district.value,

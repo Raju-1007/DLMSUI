@@ -4,9 +4,13 @@ import Sidebar from "../components/Sidebar";
 import Footer from "../components/Footer";
 import axios from "axios";
 import { useMessage } from "../context/MessageContext";
+
 export default function AdminNotifications() {
- const { showSuccess, showError } = useMessage();
+
+  const { showSuccess, showError } = useMessage();
+
   const [items, setItems] = useState([]);
+  const [meetings, setMeetings] = useState([]);
   const [search, setSearch] = useState("");
   const [showPopup, setShowPopup] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -20,36 +24,51 @@ export default function AdminNotifications() {
     userId: ""
   });
 
+  /* ---------------- LOAD DATA ---------------- */
   useEffect(() => {
     loadNotifications();
+    loadTeacherMeetings();
   }, []);
 
-  useEffect(() => {
-    if (form.sendTo === "STUDENT_ID") {
-      fetchStudents();
-    } else if (form.sendTo === "TEACHER_ID") {
-      fetchTeachers();
-    } else {
-      setUserIds([]);
-      setForm((p) => ({ ...p, userId: "" }));
-    }
-  }, [form.sendTo]);
-
   const loadNotifications = async () => {
-    const res = await axios.get(import.meta.env.VITE_API_BASE_URL+"/api/admin/notifications");
+    const res = await axios.get(
+      `${import.meta.env.VITE_API_BASE_URL}/api/admin/notifications`
+    );
     setItems(res.data || []);
   };
 
+  const loadTeacherMeetings = async () => {
+    const res = await axios.get(
+      `${import.meta.env.VITE_API_BASE_URL}/notify/api/getStudentMeetings`
+    );
+    setMeetings(res.data || []);
+  };
+
+  /* ---------------- USERS ---------------- */
+  useEffect(() => {
+    if (form.sendTo === "STUDENT_ID") fetchStudents();
+    else if (form.sendTo === "TEACHER_ID") fetchTeachers();
+    else {
+      setUserIds([]);
+      setForm(p => ({ ...p, userId: "" }));
+    }
+  }, [form.sendTo]);
+
   const fetchStudents = async () => {
-    const res = await axios.get(import.meta.env.VITE_API_BASE_URL+"/api/admin/users/students");
+    const res = await axios.get(
+      `${import.meta.env.VITE_API_BASE_URL}/api/admin/users/students`
+    );
     setUserIds(res.data);
   };
 
   const fetchTeachers = async () => {
-    const res = await axios.get(import.meta.env.VITE_API_BASE_URL+"/api/admin/users/teachers");
+    const res = await axios.get(
+      `${import.meta.env.VITE_API_BASE_URL}/api/admin/users/teachers`
+    );
     setUserIds(res.data);
   };
 
+  /* ---------------- POPUP ---------------- */
   const openAddPopup = () => {
     setForm({ id: null, title: "", message: "", sendTo: "ALL", userId: "" });
     setIsEditing(false);
@@ -65,9 +84,10 @@ export default function AdminNotifications() {
   const closePopup = () => setShowPopup(false);
 
   const handleChange = (field, value) => {
-    setForm((p) => ({ ...p, [field]: value }));
+    setForm(p => ({ ...p, [field]: value }));
   };
 
+  /* ---------------- SAVE ---------------- */
   const saveNotification = async (e) => {
     e.preventDefault();
 
@@ -78,16 +98,16 @@ export default function AdminNotifications() {
 
     if (isEditing) {
       const res = await axios.put(
-        import.meta.env.VITE_API_BASE_URL+`/api/admin/notifications/${form.id}`,
+        `${import.meta.env.VITE_API_BASE_URL}/api/admin/notifications/${form.id}`,
         form
       );
-      setItems((p) => p.map((n) => (n.id === form.id ? res.data : n)));
+      setItems(p => p.map(n => n.id === form.id ? res.data : n));
     } else {
       const res = await axios.post(
-        import.meta.env.VITE_API_BASE_URL+"/api/admin/notifications",
+        `${import.meta.env.VITE_API_BASE_URL}/api/admin/notifications`,
         form
       );
-      setItems((p) => [...p, res.data]);
+      setItems(p => [...p, res.data]);
     }
 
     closePopup();
@@ -95,25 +115,30 @@ export default function AdminNotifications() {
 
   const deleteNotification = async (id) => {
     if (!window.confirm("Delete Notification?")) return;
-    await axios.delete(import.meta.env.VITE_API_BASE_URL+`/api/admin/notifications/${id}`);
-    setItems((p) => p.filter((n) => n.id !== id));
+    await axios.delete(
+      `${import.meta.env.VITE_API_BASE_URL}/api/admin/notifications/${id}`
+    );
+    setItems(p => p.filter(n => n.id !== id));
   };
 
-  const filtered = items.filter((n) =>
-    `${n.title} ${n.message} ${n.sendTo}`.toLowerCase().includes(search.toLowerCase())
+  const filteredNotifications = items.filter(n =>
+    `${n.title} ${n.message} ${n.sendTo}`
+      .toLowerCase()
+      .includes(search.toLowerCase())
   );
 
   return (
     <div>
       <Navbar />
+
       <div className="admin-layout">
         <Sidebar />
-        <div className="admin-main">
 
+        <div className="admin-main">
+          {/* ================= NOTIFICATIONS ================= */}
           <h2 className="admin-page-title">Admin Notifications</h2>
 
           <div className="admin-box">
-
             <div className="admin-top-row">
               <button className="admin-btn-primary" onClick={openAddPopup}>
                 + Create Notification
@@ -121,7 +146,7 @@ export default function AdminNotifications() {
 
               <input
                 className="admin-search"
-                placeholder="Search..."
+                placeholder="Search notifications..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
@@ -138,7 +163,7 @@ export default function AdminNotifications() {
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((n) => (
+                {filteredNotifications.map(n => (
                   <tr key={n.id}>
                     <td>{n.title}</td>
                     <td>{n.message}</td>
@@ -152,28 +177,73 @@ export default function AdminNotifications() {
                 ))}
               </tbody>
             </table>
-
           </div>
+
+          {/* ================= TEACHER SCHEDULED MEETINGS ================= */}
+          <h2 className="admin-page-title" style={{ marginTop: "40px" }}>
+            Teacher Scheduled Meetings
+          </h2>
+
+          <div className="admin-box">
+            <table className="admin-table">
+              <thead>
+                <tr>
+                  <th>Teacher ID</th>
+                  <th>Teacher Name</th>
+                  <th>Department</th>
+                  <th>Subjects</th>
+                  <th>Class</th>
+                  <th>Date</th>
+                  <th>Start</th>
+                  <th>End</th>
+                  <th>Description</th>
+                  <th>Remind</th>
+                </tr>
+              </thead>
+              <tbody>
+                {meetings.map(m => (
+                  <tr key={m.id}>
+                    <td>{m.teacherId}</td>
+                    <td>{m.teacherName || "-"}</td>
+                    <td>{m.department || "-"}</td>
+                    <td>{m.subjects || "-"}</td>
+                    <td>{m.className || "-"}</td>
+                    <td>{m.date}</td>
+                    <td>{m.startTime}</td>
+                    <td>{m.endTime}</td>
+                    <td>{m.description}</td>
+                    <td>{m.remind ? "Yes" : "No"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
         </div>
       </div>
 
+      {/* ================= POPUP ================= */}
       {showPopup && (
         <div className="admin-overlay" onClick={closePopup}>
           <div className="admin-popup" onClick={(e) => e.stopPropagation()}>
             <h3>{isEditing ? "Edit" : "Create"} Notification</h3>
 
             <form onSubmit={saveNotification}>
-
-              <label>Enter Title<span className="req">*</span></label>
-              <input placeholder="Title"
+              <label>Title *</label>
+              <input
                 value={form.title}
-                onChange={(e) => handleChange("title", e.target.value)} />
-              <label>Enter TextArea<span className="req">*</span></label>
-              <textarea className="textArea"  placeholder="Message"
+                onChange={(e) => handleChange("title", e.target.value)}
+              />
+
+              <label>Message *</label>
+              <textarea
+                className="textArea"
                 value={form.message}
-                onChange={(e) => handleChange("message", e.target.value)} />
-              <label>Send To<span className="req">*</span></label>
-              <select className="sendTo"
+                onChange={(e) => handleChange("message", e.target.value)}
+              />
+
+              <label>Send To</label>
+              <select
                 value={form.sendTo}
                 onChange={(e) => handleChange("sendTo", e.target.value)}
               >
@@ -190,7 +260,7 @@ export default function AdminNotifications() {
                   onChange={(e) => handleChange("userId", e.target.value)}
                 >
                   <option value="">Select User</option>
-                  {userIds.map((u) => (
+                  {userIds.map(u => (
                     <option key={u.loginid} value={u.loginid}>
                       {u.loginid} - {u.fullName}
                     </option>

@@ -167,7 +167,7 @@ export default function Sidebar() {
     { icon: <FaBook />, label: "Courses", to: "/admin/courses" },
     { icon: <FaCalendarAlt />, label: "Timetable", to: "/admin/teacherssyllabus" },
     // { icon: <MdAssignment />, text: "Assignments", to: "/admin/assignments" },
-    { icon: <MdTimelapse />, label: "Attendance", to: "/admin/teachersattedance" },
+    // { icon: <MdTimelapse />, label: "Attendance", to: "/admin/teachersattedance" },
     
    
     { icon: <MdAssignment />, label: "HelpDisk", to: "/admin/helpDisk" },
@@ -187,11 +187,11 @@ export default function Sidebar() {
       { icon: <MdOutlineSchool />, label: "Attendance", to: "/teacher/attendance" },
       { icon: <FaBook />, label: "Materials", to: "/teacher/materials" },
       { icon: <FaUserGraduate />, label: "Gradebook", to: "/teacher/gradebook" },
-      { icon: <MdSchedule />, label: "Timetable", to: "/teacher/timetable" },
+      { icon: <MdSchedule />, label: "SechduleMeetings", to: "/teacher/timetable" },
       { icon: <MdNotificationsNone />, label: "Notifications", to: "/teacher/notifications" },
       { icon: <MdHelpOutline />, label: "Help Desk", to: "/teacher/Helpdisk" },
-      { icon: <MdNotificationsNone />, label: "receiveNotifications", to: "/receiveNotifications" },
-       { icon: <MdSchedule />, label: "Sechudule Meeting", to: "/mytimetable" },
+      { icon: <MdNotificationsNone />, label: "Notifications", to: "/receiveNotifications" },
+      //  { icon: <MdSchedule />, label: "Sechudule Meeting", to: "/mytimetable" },
 
     
     
