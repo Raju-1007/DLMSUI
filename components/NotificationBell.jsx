@@ -1,0 +1,3 @@
+import React from 'react'
+import { http } from '../api/axios'
+export default function NotificationBell(){ const [items,setItems]=React.useState([]); const [open,setOpen]=React.useState(false); React.useEffect(()=>{ http.get('/notify/inbox/1').then(r=> setItems(r.data||[])) },[]); return (<div style={{position:'relative'}}><button className='btn' onClick={()=> setOpen(!open)}>🔔 {items.length}</button>{open && <div className='card' style={{position:'absolute',right:0,top:36,width:300}}><b>Notifications</b><ul style={{listStyle:'none',padding:0}}>{items.map((n,i)=>(<li key={i} className='card' style={{marginTop:6}}><div style={{fontWeight:600}}>{n.title}</div><div>{n.body}</div></li>))}</ul></div>}</div>) }

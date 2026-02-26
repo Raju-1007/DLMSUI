@@ -1,22 +1,51 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
-import { useMessage } from "../context/MessageContext"; 
+import { useSelector } from "react-redux";
+import axios from "axios";
+import moment from "moment";
 
 
 export default function ResultPage() {
-  const { showSuccess, showError } = useMessage();
   const { state } = useLocation();
+  const login = useSelector((state) => state.auth.user);
 
+  console.log(login, ":::::::::::::::::::::::::::::::::::");
+
+  console.log(state, "::::::::::::::state:::::::::::::");
   const score = state?.score ?? 0;
-  const total = state?.total ?? 10; // optional
-  const percentage = Math.round((score / total) * 100);
+  const total = state?.total ?? 10;
+  const percentage =
+    total > 0 ? Math.round((score / total) * 100) : 0;
 
-  // Normally from Redux / backend
-  const studentId = "092820";
-  const studentName = "Krishna Varma";
-  const assessmentName = "Maths Unit Test 1";
+  const studentId = login?.userDetails?.loginid;
+  const studentName = login?.userDetails?.fullName;
+  const assessmentName = state?.state?.courseTitle;
+
+  const payload = {
+    score: score,
+    total: total,
+    percentage: percentage,
+    studentId: studentId,
+    studentName: studentName,
+    assessmentName: assessmentName,
+     date: moment().format("YYYY-MM-DD"),
+  }
+   useEffect(()=>{
+          handilePercentage(); 
+   });
+  const handilePercentage = async () => {
+    try {
+      await axios.post(
+        `${import.meta.env.VITE_API_BASE_URL}/analytics/api/grades/addScoreDetails`,
+        payload
+      );
+    }
+    catch (err) {
+      showError("add percteange failed");
+    }
+  }
 
   return (
     <>
@@ -26,35 +55,43 @@ export default function ResultPage() {
         <Sidebar />
 
         <div className="result-content">
-          {/* HEADER */}
-          <h2 className="result-title">📊 Assessment Result</h2>
+          <div className="result-card">
 
-          {/* STUDENT INFO */}
-          <div className="result-info-card">
-            <div><b>Student ID:</b> {studentId}</div>
-            <div><b>Student Name:</b> {studentName}</div>
-            <div><b>Assessment:</b> {assessmentName}</div>
-          </div>
+            <h2 className="result-title">
+              📊 Assessment Result
+            </h2>
 
-          {/* SCORE CARD */}
-          <div className="score-card">
-            <div className="score-circle">
-              <span>{percentage}%</span>
+            {/* Student Info */}
+            <div className="result-info">
+              <p><b>Student ID:</b> {studentId}</p>
+              <p><b>Student Name:</b> {studentName}</p>
+              <p><b>Assessment:</b> {assessmentName}</p>
             </div>
 
-            <div className="score-details">
-              <p><b>Score:</b> {score} / {total}</p>
-              <p>
-                <b>Status:</b>{" "}
-                <span
-                  className={
-                    percentage >= 40 ? "status-pass" : "status-fail"
-                  }
-                >
-                  {percentage >= 40 ? "PASS ✅" : "FAIL ❌"}
-                </span>
-              </p>
+            {/* Score Section */}
+            <div className="score-section">
+
+              <div className="circle-wrapper">
+                <div className="circle">
+                  <span>{percentage}%</span>
+                </div>
+              </div>
+
+              <div className="score-details">
+                <h3>Score: {score} / {total}</h3>
+                <p className={
+                  percentage >= 40
+                    ? "status-pass"
+                    : "status-fail"
+                }>
+                  {percentage >= 40
+                    ? "PASS ✅"
+                    : "FAIL ❌"}
+                </p>
+              </div>
+
             </div>
+
           </div>
         </div>
       </div>

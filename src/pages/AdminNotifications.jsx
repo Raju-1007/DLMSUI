@@ -4,90 +4,84 @@ import Sidebar from "../components/Sidebar";
 import Footer from "../components/Footer";
 import axios from "axios";
 import { useMessage } from "../context/MessageContext";
+import { useSelector } from "react-redux";
 
 export default function AdminNotifications() {
 
+  const login = useSelector((state) => state.auth.user);
   const { showSuccess, showError } = useMessage();
 
   const [items, setItems] = useState([]);
   const [meetings, setMeetings] = useState([]);
   const [search, setSearch] = useState("");
   const [showPopup, setShowPopup] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
-  const [userIds, setUserIds] = useState([]);
+
+  const [page, setPage] = useState(0);
+  const [size] = useState(5);
+  const [totalPages, setTotalPages] = useState(0);
 
   const [form, setForm] = useState({
-    id: null,
     title: "",
     message: "",
     sendTo: "ALL",
-    userId: ""
+    teacherId: "",
+    teacherName: "",
+    districtId: "",
+    mandalId: "",
+    villageId: ""
   });
 
-  /* ---------------- LOAD DATA ---------------- */
+  /* ================= LOAD DATA ================= */
+
   useEffect(() => {
     loadNotifications();
     loadTeacherMeetings();
-  }, []);
+  }, [page]);
 
   const loadNotifications = async () => {
-    const res = await axios.get(
-      `${import.meta.env.VITE_API_BASE_URL}/api/admin/notifications`
-    );
-    setItems(res.data || []);
+    try {
+      const res = await axios.get(
+        `${import.meta.env.VITE_API_BASE_URL}/notify/api/notifications/getALLNotifications`,
+        {
+          params: {
+            sendTo: "ALL",
+            page: page,
+            size: size
+          }
+        }
+      );
+
+      setItems(res.data.content || []);
+      setTotalPages(res.data.totalPages);
+
+    } catch (err) {
+      showError("Failed to load notifications");
+      setItems([]);
+    }
   };
 
   const loadTeacherMeetings = async () => {
-    const res = await axios.get(
-      `${import.meta.env.VITE_API_BASE_URL}/notify/api/getStudentMeetings`
-    );
-    setMeetings(res.data || []);
-  };
-
-  /* ---------------- USERS ---------------- */
-  useEffect(() => {
-    if (form.sendTo === "STUDENT_ID") fetchStudents();
-    else if (form.sendTo === "TEACHER_ID") fetchTeachers();
-    else {
-      setUserIds([]);
-      setForm(p => ({ ...p, userId: "" }));
+    try {
+      const res = await axios.get(
+        `${import.meta.env.VITE_API_BASE_URL}/notify/api/getStudentMeetings`, {
+          params: {
+            
+            page: page,
+            size: size
+          }
+        }
+          
+        
+      );
+      setMeetings(res.data.content || []);
+      setTotalPages(res.data.totalPages);
+    } catch {
+      setMeetings([]);
     }
-  }, [form.sendTo]);
-
-  const fetchStudents = async () => {
-    const res = await axios.get(
-      `${import.meta.env.VITE_API_BASE_URL}/api/admin/users/students`
-    );
-    setUserIds(res.data);
   };
 
-  const fetchTeachers = async () => {
-    const res = await axios.get(
-      `${import.meta.env.VITE_API_BASE_URL}/api/admin/users/teachers`
-    );
-    setUserIds(res.data);
-  };
+  /* ================= SAVE ================= */
 
-  /* ---------------- POPUP ---------------- */
-  const openAddPopup = () => {
-    setForm({ id: null, title: "", message: "", sendTo: "ALL", userId: "" });
-    setIsEditing(false);
-    setShowPopup(true);
-  };
-
-  const openEditPopup = (item) => {
-    setForm(item);
-    setIsEditing(true);
-    setShowPopup(true);
-  };
-
-  const closePopup = () => setShowPopup(false);
-
-  const handleChange = (field, value) => {
-    setForm(p => ({ ...p, [field]: value }));
-  };
-
-  /* ---------------- SAVE ---------------- */
   const saveNotification = async (e) => {
     e.preventDefault();
 
@@ -96,29 +90,25 @@ export default function AdminNotifications() {
       return;
     }
 
-    if (isEditing) {
-      const res = await axios.put(
-        `${import.meta.env.VITE_API_BASE_URL}/api/admin/notifications/${form.id}`,
-        form
+    try {
+      await axios.post(
+        `${import.meta.env.VITE_API_BASE_URL}/notify/api/notifications/sendAdminNotifications`,
+        {
+          ...form,
+          adminId: login?.userDetails?.loginid,
+          role: login?.userDetails?.role,
+          fullName: login?.userDetails?.fullName
+        }
       );
-      setItems(p => p.map(n => n.id === form.id ? res.data : n));
-    } else {
-      const res = await axios.post(
-        `${import.meta.env.VITE_API_BASE_URL}/api/admin/notifications`,
-        form
-      );
-      setItems(p => [...p, res.data]);
+
+      showSuccess("Notification Sent");
+      setShowPopup(false);
+      setPage(0);
+      loadNotifications();
+
+    } catch {
+      showError("Error saving notification");
     }
-
-    closePopup();
-  };
-
-  const deleteNotification = async (id) => {
-    if (!window.confirm("Delete Notification?")) return;
-    await axios.delete(
-      `${import.meta.env.VITE_API_BASE_URL}/api/admin/notifications/${id}`
-    );
-    setItems(p => p.filter(n => n.id !== id));
   };
 
   const filteredNotifications = items.filter(n =>
@@ -135,12 +125,13 @@ export default function AdminNotifications() {
         <Sidebar />
 
         <div className="admin-main">
-          {/* ================= NOTIFICATIONS ================= */}
+
           <h2 className="admin-page-title">Admin Notifications</h2>
 
           <div className="admin-box">
+
             <div className="admin-top-row">
-              <button className="admin-btn-primary" onClick={openAddPopup}>
+              <button className="admin-btn-primary" onClick={() => setShowPopup(true)}>
                 + Create Notification
               </button>
 
@@ -158,28 +149,30 @@ export default function AdminNotifications() {
                   <th>Title</th>
                   <th>Message</th>
                   <th>Send To</th>
-                  <th>User ID</th>
-                  <th>Actions</th>
+                  <th>Teacher ID</th>
+                  <th>Date</th>
                 </tr>
               </thead>
+
               <tbody>
                 {filteredNotifications.map(n => (
-                  <tr key={n.id}>
+                  <tr key={n.rstudentTeacherNotificationId}>
                     <td>{n.title}</td>
                     <td>{n.message}</td>
                     <td>{n.sendTo}</td>
-                    <td>{n.userId || "-"}</td>
-                    <td>
-                      <button onClick={() => openEditPopup(n)}>Edit</button>
-                      <button onClick={() => deleteNotification(n.id)}>Delete</button>
-                    </td>
+                    <td>{n.teacherId || "-"}</td>
+                    <td>{n.date}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
+
+            {/* PAGINATION */}
+           
           </div>
 
-          {/* ================= TEACHER SCHEDULED MEETINGS ================= */}
+          {/* ================= MEETINGS ================= */}
+
           <h2 className="admin-page-title" style={{ marginTop: "40px" }}>
             Teacher Scheduled Meetings
           </h2>
@@ -189,92 +182,52 @@ export default function AdminNotifications() {
               <thead>
                 <tr>
                   <th>Teacher ID</th>
-                  <th>Teacher Name</th>
-                  <th>Department</th>
-                  <th>Subjects</th>
                   <th>Class</th>
                   <th>Date</th>
                   <th>Start</th>
                   <th>End</th>
                   <th>Description</th>
-                  <th>Remind</th>
                 </tr>
               </thead>
+
               <tbody>
                 {meetings.map(m => (
                   <tr key={m.id}>
                     <td>{m.teacherId}</td>
-                    <td>{m.teacherName || "-"}</td>
-                    <td>{m.department || "-"}</td>
-                    <td>{m.subjects || "-"}</td>
-                    <td>{m.className || "-"}</td>
+                    <td>{m.className}</td>
                     <td>{m.date}</td>
                     <td>{m.startTime}</td>
                     <td>{m.endTime}</td>
                     <td>{m.description}</td>
-                    <td>{m.remind ? "Yes" : "No"}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-
-        </div>
-      </div>
-
-      {/* ================= POPUP ================= */}
-      {showPopup && (
-        <div className="admin-overlay" onClick={closePopup}>
-          <div className="admin-popup" onClick={(e) => e.stopPropagation()}>
-            <h3>{isEditing ? "Edit" : "Create"} Notification</h3>
-
-            <form onSubmit={saveNotification}>
-              <label>Title *</label>
-              <input
-                value={form.title}
-                onChange={(e) => handleChange("title", e.target.value)}
-              />
-
-              <label>Message *</label>
-              <textarea
-                className="textArea"
-                value={form.message}
-                onChange={(e) => handleChange("message", e.target.value)}
-              />
-
-              <label>Send To</label>
-              <select
-                value={form.sendTo}
-                onChange={(e) => handleChange("sendTo", e.target.value)}
+           <div className="admin-pagination">
+              <button
+                disabled={page === 0}
+                onClick={() => setPage(page - 1)}
               >
-                <option value="ALL">ALL</option>
-                <option value="STUDENT">ALL STUDENTS</option>
-                <option value="TEACHER">ALL TEACHERS</option>
-                <option value="STUDENT_ID">STUDENT ID</option>
-                <option value="TEACHER_ID">TEACHER ID</option>
-              </select>
-
-              {(form.sendTo === "STUDENT_ID" || form.sendTo === "TEACHER_ID") && (
-                <select
-                  value={form.userId}
-                  onChange={(e) => handleChange("userId", e.target.value)}
-                >
-                  <option value="">Select User</option>
-                  {userIds.map(u => (
-                    <option key={u.loginid} value={u.loginid}>
-                      {u.loginid} - {u.fullName}
-                    </option>
-                  ))}
-                </select>
-              )}
-
-              <button className="button" type="submit">
-                {isEditing ? "Update" : "Send"}
+                Previous
               </button>
-            </form>
-          </div>
+
+              <span>
+                Page {page + 1} of {totalPages}
+              </span>
+
+              <button
+                disabled={page + 1 >= totalPages}
+                onClick={() => setPage(page + 1)}
+              >
+                Next
+              </button>
+            </div>
+
+
         </div>
-      )}
+        
+      </div>
 
       <Footer />
     </div>

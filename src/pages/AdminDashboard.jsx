@@ -2,14 +2,15 @@ import React, { useEffect, useRef, useState } from "react";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 import Footer from "../components/Footer";
-import LoginActivity from "../components/LoginActivity";
+
 import axios from "axios";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 
-export default function AdminDashboard() {
-  LoginActivity();
 
+
+export default function AdminDashboard() {
+    
   const [TeacherData, setTeacherData] = useState([]);
   const [data, setData] = useState({ students: [], courses: [] });
 
@@ -18,6 +19,7 @@ export default function AdminDashboard() {
   const [selectedItem, setSelectedItem] = useState(null);
 
   useEffect(() => {
+    
     loadTeacherData();
     loadCounts();
   }, []);

@@ -6,7 +6,7 @@ import Footer from "../components/Footer";
 import { useMessage } from "../context/MessageContext"; 
 
 
-export default function SuperAdminApproval() {
+export default function AdminApproval() {
   const { showSuccess, showError } = useMessage();
   const [users, setUsers] = useState([]);
 
@@ -16,7 +16,7 @@ export default function SuperAdminApproval() {
 
   const loadPendingUsers = async () => {
     try {
-      const res = await axios.get(import.meta.env.VITE_API_BASE_URL+"/login/login/pendingApporavlAdmin");
+      const res = await axios.get(import.meta.env.VITE_API_BASE_URL+"/login/login/pendingApporavlTeachers");
       setUsers(res.data);
     
     } catch(err) {

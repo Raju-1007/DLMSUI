@@ -9,6 +9,7 @@ export default function GradeBook({ studentId }) {
   const { showSuccess, showError } = useMessage();
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
+  const login = useSelector((state) => state.auth.user);
 
   // Load grades when page mounts
   useEffect(() => {
@@ -16,15 +17,19 @@ export default function GradeBook({ studentId }) {
   }, []);
 
   const fetchGrades = async () => {
-    try {
-      const res = await axios.get(import.meta.env.VITE_API_BASE_URL+"/api/courses/getCourses");
-      setRows(res.data || []);
-    } catch (error) {
-     showError("Error fetching grades:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  try {
+    const res = await axios.get(
+      `${import.meta.env.VITE_API_BASE_URL}/analytics/api/grades/getScoreDetails/${login?.userDetails?.loginid}`
+    );
+
+    setRows(res.data || []);
+  } catch (error) {
+    showError("Error fetching grades:", error);
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   // Helper to color-code grades
   const getGradeColor = (grade) => {
@@ -51,7 +56,7 @@ export default function GradeBook({ studentId }) {
               fontWeight: 700,
             }}
           >
-            📘 My Grades
+            📘 My Grade
           </h2>
 
           {/* Card Container */}

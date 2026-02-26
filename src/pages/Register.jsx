@@ -14,6 +14,11 @@ export default function Register() {
   const [email, setEmail] = useState("");
   const [mobile, setMobile] = useState("");
   const [adhaarValue, setAdhaarValue] = useState("");
+  const [isMasked, setIsMasked] = useState(false);
+  const [passwordToggleClass, setPasswordToggleClass] = useState("")
+  const [passwordShown, setPasswordShown] = useState(false)
+  const [confirmPasswordShown, setConfirmPasswordShown] = useState(false);
+  
 
   const nav = useNavigate();
 
@@ -44,6 +49,25 @@ export default function Register() {
   const passwordRegex =
     /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#])[A-Za-z\d@$!%*?&#]{8,15}$/;
 
+  const maskAadhaar = (value) => {
+    if (value.length < 12) return value;
+    return `XXXX XXXX ${value.slice(8, 12)}`;
+  };
+
+  useEffect(() => {
+    if (passwordShown == true) {
+      setPasswordToggleClass("visible")
+    }
+    if (passwordShown == false) { 
+      setPasswordToggleClass("notVisible")
+    }
+  }, [passwordShown])
+  const togglePassword = () => {
+    setPasswordShown(!passwordShown)
+  }
+  const toggleConfirmPassword = () => {
+    setConfirmPasswordShown((prev) => !prev);
+  };
   const doRegister = async () => {
     if (!fullName.trim()) {
       return showError("Full Name is required");
@@ -97,7 +121,10 @@ export default function Register() {
          localStorage.setItem("studentsInformation",JSON.stringify(result.data));
         showSuccess("Registered successfully!");
         nav("/");
-      }
+      }else {
+    showError(result?.data?.message || "Registration failed");
+    return;
+  }
     } catch(err) {
       showError(err.response?.data?.message || "Something went wrong");
     }
@@ -107,7 +134,7 @@ export default function Register() {
   return (
     <div className="reg-page-container">
       <div className="reg-form-box">
-        <h1 className="reg-title">Student Register Account</h1>
+        <h1 className="reg-title">New Registration</h1>
 
         <label>Full Name<span className="req">*</span></label>
         <input
@@ -140,36 +167,35 @@ export default function Register() {
         <input
           type="text"
           placeholder="Enter Aadhaar Number"
-          value={adhaarValue}
+          value={isMasked ? maskAadhaar(adhaarValue) : adhaarValue}
           maxLength={12}
-          onChange={(e) =>
-            setAdhaarValue(e.target.value.replace(/\D/g, ""))
-          }
+          onChange={(e) => {
+            const digits = e.target.value.replace(/\D/g, "").slice(0, 12);
+            setAdhaarValue(digits);
+          }}
+          onFocus={() => setIsMasked(false)}
+          onBlur={() => {
+            if (adhaarValue.length === 12) {
+              setIsMasked(true);
+            }
+          }}
         />
-
-        <label>Role<span className="req">*</span></label>
-<input
-  className="SelectRoleRegister"
-  type="text"
-  value="STUDENT"
-  readOnly
-/>
 
         <label>Enter Password<span className="req">*</span></label>
-        <input
-          type="password"
-          placeholder="Enter Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
+        <div className="departmentPassword">
+          <input type={passwordShown ? "text" : "password"} placeholder="Enter Password" value={password} onChange={(e) => setPassword(e.target.value)}/>
+          <div className={`passwordToggle ${passwordShown ? "visible" : "notVisible"}`} onClick={togglePassword}>
+            <span>{passwordShown ? "Hide" : "Show"}</span>
+          </div>
+        </div>
 
-        <label>Confirm Password<span className="req">*</span></label>
-        <input
-          type="password"
-          placeholder="Re-enter Password"
-          value={confirmPassword}
-          onChange={(e) => setConfirmPassword(e.target.value)}
-        />
+        <label>Confirm Password <span className="req">*</span></label>
+        <div className="departmentPassword">
+          <input type={confirmPasswordShown ? "text" : "password"} placeholder="Re-enter Password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)}/>
+          <div className={`passwordToggle ${confirmPasswordShown ? "visible" : "notVisible"}`} onClick={toggleConfirmPassword}>
+            <span>{confirmPasswordShown ? "Hide" : "Show"}</span>
+          </div>
+        </div>
 
         <button className="reg-submit-btn" onClick={doRegister}>
           Register

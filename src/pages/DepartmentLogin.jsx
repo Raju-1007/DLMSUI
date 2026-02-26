@@ -7,7 +7,9 @@ export default function DepartmentLogin() {
   const { showSuccess, showError } = useMessage();
   const nav = useNavigate();
   const [roles, setRoles] = useState([]);
-
+  const [passwordToggleClass, setPasswordToggleClass] = useState("")
+  const [passwordShown, setPasswordShown] = useState(false)
+  const [confirmPasswordShown, setConfirmPasswordShown] = useState(false);
   const [form, setForm] = useState({
     fullName: "",
     email: "",
@@ -80,6 +82,22 @@ export default function DepartmentLogin() {
     setForm({ ...form, [name]: value });
   };
 
+
+    useEffect(() => {
+      if (passwordShown == true) {
+        setPasswordToggleClass("visible")
+      }
+      if (passwordShown == false) { 
+        setPasswordToggleClass("notVisible")
+      }
+    }, [passwordShown])
+    const togglePassword = () => {
+      setPasswordShown(!passwordShown)
+    }
+    const toggleConfirmPassword = () => {
+      setConfirmPasswordShown((prev) => !prev);
+    };
+
   /* ================= SUBMIT ================= */
   const doRegister = async () => {
     if (Object.values(errors).some(Boolean)) {
@@ -112,8 +130,7 @@ export default function DepartmentLogin() {
       <div className="left-panel" />
       <div className="right-panel">
         <div className="reg-card">
-          <h2 className="reg-title">Department Registration</h2>
-
+          <h2 className="reg-title">New Registration</h2>
           <div className="reg-grid">
             <div className="field">
               <label>Full Name *</label>
@@ -178,25 +195,35 @@ export default function DepartmentLogin() {
 
             <div className="field">
               <label>Create Password *</label>
-              <input
-                type="password"
-                name="password"
-                value={form.password}
-                onChange={handleChange}
-                className={errors.password ? "error-border" : ""}
-              />
+              <div className="departmentPassword">
+                <input
+                  type={passwordShown ? "text" : "password"}
+                  name="password"
+                  value={form.password}
+                  onChange={handleChange}
+                  className={errors.password ? "error-border" : ""}
+                />
+                <div className={`passwordToggle ${passwordShown ? "visible" : "notVisible"}`} onClick={togglePassword}>
+                  <span>{passwordShown ? "Hide" : "Show"}</span>
+                </div>
+              </div>
               <span className="error-space">{errors.password}</span>
             </div>
 
             <div className="field full">
               <label>Confirm Password *</label>
-              <input
-                type="password"
-                name="confirmPassword"
-                value={form.confirmPassword}
-                onChange={handleChange}
-                className={errors.confirmPassword ? "error-border" : ""}
-              />
+              <div className="departmentPassword">
+                <input
+                  type={confirmPasswordShown ? "text" : "password"}
+                  name="confirmPassword"
+                  value={form.confirmPassword}
+                  onChange={handleChange}
+                  className={errors.confirmPassword ? "error-border" : ""}
+                />
+                <div className={`passwordToggle ${confirmPasswordShown ? "visible" : "notVisible"}`} onClick={toggleConfirmPassword}>
+                  <span>{confirmPasswordShown ? "Hide" : "Show"}</span>
+                </div>
+              </div>
               <span className="error-space">{errors.confirmPassword}</span>
             </div>
           </div>

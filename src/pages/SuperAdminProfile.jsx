@@ -1,4 +1,5 @@
 // src/pages/SuperAdminProfile.jsx
+
 import React, { useEffect, useState } from "react";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
@@ -8,162 +9,173 @@ import axios from "axios";
 
 export default function SuperAdminProfile() {
 
-    const[adminData,setAdminData]=useState(null);
-    const login=useSelector((state)=>state.auth.user)
-useEffect(() => {
-  if (login?.loginId) {
-    getInstructorDetails();
-  }
-}, [login?.loginId]);
+  const login = useSelector((state) => state.auth.user);
+  const superAdminId = login?.userDetails?.loginid;
 
-  const getInstructorDetails = async () => {
-  try {
-    const res = await axios.get(
-      import.meta.env.VITE_API_BASE_URL +
-        "/api/roles/getAdminData"
+  const [profile, setProfile] = useState(null);
+  const [previewImage, setPreviewImage] = useState(null);
+  const [dashboard, setDashboard] = useState(null);
+
+  useEffect(() => {
+    if (superAdminId) {
+      setProfile(login?.userDetails);
+      loadProfileImage();
+      loadDashboard();
+    }
+  }, [superAdminId]);
+
+  /* ================= DASHBOARD DATA ================= */
+
+  const loadDashboard = async () => {
+    try {
+      const res = await axios.get(
+        `${import.meta.env.VITE_API_BASE_URL}/analytics/getSuperAdminDashBoardDetails`
+      );
+      setDashboard(res.data);
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
+  /* ================= IMAGE ================= */
+
+  const loadProfileImage = async () => {
+    try {
+      const res = await axios.get(
+        `${import.meta.env.VITE_API_BASE_URL}/login/getTeacherProfileImage`,
+        {
+          params: {
+            teacherId: superAdminId,
+            role: login?.userDetails?.role
+          }
+        }
+      );
+
+      if (res.data) {
+        setPreviewImage(`data:image/jpeg;base64,${res.data}`);
+      }
+
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
+  const handleImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append("teacherId", superAdminId);
+    formData.append("file", file);
+    formData.append("role", login?.userDetails?.role);
+
+    await axios.post(
+      `${import.meta.env.VITE_API_BASE_URL}/login/uploadTeacherProfileImage`,
+      formData,
+      { headers: { "Content-Type": "multipart/form-data" } }
     );
-     let getAdminData = res.data.filter((prev) => prev.loginid === login?.loginId && prev.role ==login?.role) || [];
-    
-    setAdminData( getAdminData[0] || []);
-    
-  } catch (err) {
-    showError(err?.message || "Failed to load instructor details");
-    setAdminData([]);
-  }
-};
 
+    loadProfileImage();
+  };
 
- 
-  // MOCK DATA (replace with API later)
-  const superAdmin= adminData?{
-    name: adminData?.fullName,
-    adminId: adminData?.loginid,
-    role: adminData?.role,
-    department: "Academic Administration",
-    email: adminData?.email,
-    phone: adminData?.mobile,
-    status:"Activated"
-    
-  }:null;
-
-  // MOCK DATA – later connect API
-  
+  const handleRemoveImage = async () => {
+    await axios.delete(
+      `${import.meta.env.VITE_API_BASE_URL}/login/removeTeacherProfileImage`,
+      {
+        params: {
+          teacherId: superAdminId,
+          role: login?.userDetails?.role
+        }
+      }
+    );
+    setPreviewImage(null);
+  };
 
   return (
-    <div>
+    <>
       <Navbar />
 
-      <div className="sp-layout">
+      <div className="sap-layout">
         <Sidebar />
 
-        <div className="sp-main">
+        <div className="sap-main">
 
-          {/* ================= SUPER ADMIN PROFILE CARD ================= */}
-          <div className="sp-card">
-            <div className="sp-profile">
-              <div>
-                <h3>Super Admin Profile</h3>
-                <p><b>Name:</b> {superAdmin?.name}</p>
-                <p><b>Super Admin Id:</b> {superAdmin?.superAdminId}</p>
-                <p><b>Role:</b> {superAdmin?.role}</p>
-                <p><b>Organization:</b> {superAdmin?.organization}</p>
-                <p><b>Email:</b> {superAdmin?.email}</p>
-                <p><b>Phone:</b> {superAdmin?.phone}</p>
-                <p><b>Last Login:</b> {superAdmin?.lastLogin}</p>
-                <p>
-                  <b>Status:</b>{" "}
-                  <span className="green">{superAdmin?.status}</span>
-                </p>
+          {/* PROFILE CARD */}
+          <div className="sap-card">
+
+            <div className="sap-profile">
+
+              <div className="sap-avatar-box">
+
+                {previewImage ? (
+                  <img src={previewImage} className="sap-avatar" />
+                ) : (
+                  <div className="sap-avatar-placeholder">
+                    {profile?.fullName?.charAt(0)}
+                  </div>
+                )}
+
+                <label className="sap-change-btn">
+                  Change Photo
+                  <input type="file" hidden accept="image/*"
+                    onChange={handleImageUpload}/>
+                </label>
+
+                {previewImage && (
+                  <button className="sap-remove-btn"
+                    onClick={handleRemoveImage}>
+                    Remove
+                  </button>
+                )}
+
               </div>
 
-              <div className="sp-rating">
-                <div className="sp-image">Image</div>
-                <p>Authority Level</p>
-                <span>Full Access 🔑</span>
+              <div className="sap-info">
+                <h2>{profile?.fullName}</h2>
+
+                <div className="sap-info-grid">
+                  <p><b>Super Admin ID:</b> {profile?.loginid}</p>
+                  <p><b>Role:</b> {profile?.role}</p>
+                  <p><b>Email:</b> {profile?.email}</p>
+                  <p><b>Phone:</b> {profile?.mobile}</p>
+                  <p><b>Status:</b> <span className="sap-status">Active</span></p>
+                </div>
               </div>
+
             </div>
+
           </div>
 
-          {/* ================= PLATFORM OVERVIEW ================= */}
-          <div className="sp-card">
-            <h4>Platform Overview</h4>
+          {/* OVERVIEW SUMMARY */}
+          <div className="sap-card">
+            <h3>System Overview</h3>
 
-            <table className="sp-table">
-              <thead>
-                <tr>
-                  <th>Entity</th>
-                  <th>Total Count</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr><td>Organizations / Schools</td><td>5</td></tr>
-                <tr><td>Admins</td><td>12</td></tr>
-                <tr><td>Teachers</td><td>120</td></tr>
-                <tr><td>Students</td><td>5,200</td></tr>
-                <tr><td>Courses</td><td>320</td></tr>
-              </tbody>
-            </table>
-          </div>
+            <div className="sap-stats">
 
-          {/* ================= ROLE & PERMISSION CONTROL ================= */}
-          <div className="sp-card">
-            <h4>Role & Permission Control</h4>
-            <ul className="sp-list">
-              <li>✔ Create / Disable Admin Accounts</li>
-              <li>✔ Assign Roles & Permissions</li>
-              <li>✔ Control Multi-Organization Access</li>
-              <li>✔ Approve Platform-Level Features</li>
-              <li>✔ Audit Logs & Security Policies</li>
-            </ul>
-          </div>
+              <StatBox label="States" value={dashboard?.states} />
+              <StatBox label="Districts" value={dashboard?.districts} />
+              <StatBox label="Mandals" value={dashboard?.mandals} />
+              <StatBox label="Villages" value={dashboard?.villages} />
+              <StatBox label="Schools" value={dashboard?.schools} />
+              <StatBox label="Teachers" value={dashboard?.teachers} />
+              <StatBox label="Students" value={dashboard?.studentCount} />
 
-          {/* ================= SYSTEM & SECURITY ================= */}
-          <div className="sp-card">
-            <h4>System & Security Overview</h4>
-            <ul className="sp-list">
-              <li>🔐 Authentication: Secure</li>
-              <li>🛡 Authorization: Role-based</li>
-              <li>📦 Storage Usage: 68%</li>
-              <li>🔁 Backups: Automated & Verified</li>
-            </ul>
-          </div>
-
-          {/* ================= SUPER ADMIN ACTIVITY ================= */}
-          <div className="sp-card">
-            <h4>Super Admin Activity Log</h4>
-
-            <table className="sp-table">
-              <thead>
-                <tr>
-                  <th>Date</th>
-                  <th>Action</th>
-                  <th>Details</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>21 Dec</td>
-                  <td>Admin Created</td>
-                  <td>New admin added for School A</td>
-                </tr>
-                <tr>
-                  <td>19 Dec</td>
-                  <td>Permission Updated</td>
-                  <td>Role permissions modified</td>
-                </tr>
-                <tr>
-                  <td>18 Dec</td>
-                  <td>Organization Added</td>
-                  <td>New school onboarded</td>
-                </tr>
-              </tbody>
-            </table>
+            </div>
           </div>
 
         </div>
       </div>
 
       <Footer />
+    </>
+  );
+}
+
+function StatBox({ label, value }) {
+  return (
+    <div className="sap-stat-box">
+      <p>{label}</p>
+      <h2>{value ?? 0}</h2>
     </div>
   );
 }

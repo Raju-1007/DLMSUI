@@ -15,14 +15,14 @@ export default function TeacherUpdateProfile() {
     district: null,
     mandal: null,
     village: null,
-    
+
     schoolAddress: "",
     relationName: "",
     relationType: "",
     relationMobile: "",
     relationEmail: "",
-    techer_service_id:"",
-    
+    techer_service_id: "",
+
   });
 
   /* ================= FETCHERS ================= */
@@ -86,7 +86,7 @@ export default function TeacherUpdateProfile() {
     );
     return res.data.map(c => ({
       label: c.class_name,   // ✅ SHOW NAME IN UI
-    value: c.class_id 
+      value: c.class_id
     }));
   };
 
@@ -100,6 +100,7 @@ export default function TeacherUpdateProfile() {
       teacherName: loginDetails.userDetails.fullName,
       teacherEmail: loginDetails.userDetails.email,
       teacherPhone: loginDetails.userDetails.mobile,
+      role: loginDetails.userDetails.role,
       districtId: formData.district?.value,
       mandalId: formData.mandal?.value,
       villageId: formData.village?.value,
@@ -107,7 +108,10 @@ export default function TeacherUpdateProfile() {
       relationType: formData.relationType,
       relationMobile: formData.relationMobile,
       relation_email: formData.relationEmail,
-      techer_service_id: formData.techer_service_id
+        techerServiceId:
+    loginDetails?.userDetails?.role === "TEACHER"
+      ? formData. techer_service_id
+      : 'Admin123'
 
     };
 
@@ -123,7 +127,12 @@ export default function TeacherUpdateProfile() {
     );
 
     alert("Profile updated successfully");
-   nav("/teacher/dashboard");
+    if(loginDetails?.userDetails?.role === "TEACHER"){
+    nav("/teacher/dashboard");
+    }
+    else{
+      nav("/admin/dashboard");
+    }
   };
 
   /* ================= UI ================= */
@@ -144,7 +153,7 @@ export default function TeacherUpdateProfile() {
               {/* STUDENT INFO */}
               <div className="form-row">
                 <div className="form-group">
-                  <label>Teacher Name</label>
+                  <label>Name</label>
                   <input value={loginDetails.userDetails.fullName} disabled />
                 </div>
                 <div className="form-group">
@@ -159,7 +168,7 @@ export default function TeacherUpdateProfile() {
                   <input value={loginDetails.userDetails.mobile} disabled />
                 </div>
                 <div className="form-group">
-                  <label>Teacher Deapartment ID</label>
+                  <label>Deapartment ID</label>
                   <input value={loginDetails.userDetails.loginid} disabled />
                 </div>
               </div>
@@ -215,7 +224,7 @@ export default function TeacherUpdateProfile() {
                     }
                   />
                 </div>
-                 <div className="form-group">
+                <div className="form-group">
                   <label>Relation email *</label>
                   <input
                     value={formData.relationEmail}
@@ -228,10 +237,10 @@ export default function TeacherUpdateProfile() {
                   />
                 </div>
 
-               
+
               </div>
 
-          
+
 
               {/* RELATION */}
               <div className="form-row">
@@ -281,22 +290,37 @@ export default function TeacherUpdateProfile() {
                 </div>
 
                 <div className="form-group">
-                  <label>Tecaher Service_id *</label>
-                  <input
-                    value={formData.techer_service_id}
-                    onChange={(e) =>
-                      setFormData(p => ({
-                        ...p,
-                        techer_service_id: e.target.value
-                      }))
-                    }
-                  />
+                  {loginDetails?.userDetails?.role === "TEACHER" && (
+                    <>
+                      <label>Teacher Service ID *</label>
+                      <input
+                        type="text"
+                        value={formData.techer_service_id}
+                        onChange={(e) =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            techer_service_id: e.target.value,
+                          }))
+                        }
+                      />
+                    </>
+                  )}
                 </div>
 
-                
-                
+
+
+
+
+
+              </div>
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Teacher Name</label>
+                  <input value={loginDetails.userDetails.role} disabled />
                 </div>
-                
+              </div>
+
               <div className="form-actions">
                 <button type="submit" className="submit-btn">
                   Update Profile

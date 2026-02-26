@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
@@ -7,10 +7,14 @@ import { useSelector } from "react-redux";
 import { useMessage } from "../context/MessageContext"; 
 
 
+
 export default function QuizPage() {
   const { showSuccess, showError } = useMessage();
 
   const loginDetails = useSelector((state) => state.auth.user);
+  const {state}=useLocation();
+
+  console.log(state,":::::::::::::assignmentName::::::::::::::::::::::::::::::");
 
   // ✅ IDs
   const studentId = Number(loginDetails.loginId);
@@ -40,7 +44,7 @@ export default function QuizPage() {
     try {
       setLoading(true);
       const res = await axios.get(
-        import.meta.env.VITE_API_BASE_URL+`/api/student/assessment/${assessmentId}/questions`
+        import.meta.env.VITE_API_BASE_URL+`/notify/getQuestionDetails`
       );
 
       if (Array.isArray(res.data)) {
@@ -64,8 +68,8 @@ export default function QuizPage() {
     await axios.put(
       import.meta.env.VITE_API_BASE_URL+"/api/student/start-assessment",
       {
-        studentId,
-        assessmentId
+        assessmentId:1,
+          studentId:loginDetails?.userDetails?.loginid,
       }
     );
   };
@@ -80,6 +84,8 @@ export default function QuizPage() {
       [questionId]: option
     }));
 
+    console.log(answers,"::::::::::::::answers:::::::::::::::::")
+
     // 🔥 Trigger IN_PROGRESS only once
     if (!assessmentStarted) {
       await startAssessment();
@@ -93,10 +99,10 @@ export default function QuizPage() {
   const submitQuiz = async () => {
     try {
       const res = await axios.post(
-        import.meta.env.VITE_API_BASE_URL+"/api/student/submitquiz",
+        import.meta.env.VITE_API_BASE_URL+"/notify/submitquiz",
         {
           assessmentId:1,
-          studentId,
+          studentId:loginDetails?.userDetails?.loginid,
           answers
         }
       );
@@ -104,7 +110,7 @@ export default function QuizPage() {
       const score = res.data;
 
       navigate(`/chapter/${assessmentId}/result`, {
-        state: { score }
+        state: { score,state }
       });
 
     } catch(err) {
@@ -137,8 +143,8 @@ export default function QuizPage() {
             {/* HEADER */}
             <div className="quiz-header">
               <h2>Assessment Quiz</h2>
-              <span>Student Id: {studentName}</span>
-  <span>Name:-{LoginStuDetails.fullName}</span>
+              <span>Student Id: {loginDetails?.userDetails?.loginid}</span>
+  <span>Name:-{loginDetails?.userDetails?.fullName}</span>
 
             </div>
 
@@ -151,14 +157,14 @@ export default function QuizPage() {
                   <label
                     key={opt}
                     className={`quiz-option ${
-                      answers[q.id] === opt ? "active" : ""
+                      answers[q.questionId] === opt ? "active" : ""
                     }`}
                   >
                     <input
                       type="radio"
                       name={`q-${q.id}`}
-                      checked={answers[q.id] === opt}
-                      onChange={() => selectAnswer(q.id, opt)}
+                      checked={answers[q.questionId] === opt}
+                      onChange={() => selectAnswer(q.questionId, opt)}
                     />
                     {q[`option${opt}`]}
                   </label>

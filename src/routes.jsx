@@ -61,9 +61,10 @@ import SuperAdminLoginActivity from './pages/SuperAdminLoginActivity'
 import TeacherLoginActivity from './pages/TecaherLoginActivity'
 import Calnderview from './pages/Calnderview'
 import ChatWidget from './components/ChatWidget'
-import UpdateProfile from './pages/updateProfile'
+import UpdateProfile from './pages/UpdateProfile'
 import TeacherUpdateProfile from './pages/TeacherUpdateProfile'
 import StudentTimeTable from './pages/StudentTimeTable'
+import AdminApproval from './pages/AdminApproval'
 
 export const router = createBrowserRouter([
   { path: '/', element: <Login /> },
@@ -72,7 +73,7 @@ export const router = createBrowserRouter([
   { path: '/courses', element: <CourseList /> },
   { path: '/course/:id', element: <CourseView /> },
   // { path:'/course/:id/chapter/:chapterId', element:<ChapterView/> },
-  // { path:'/chapter/:id/quiz', element:<QuizPage/> },
+   { path:'/chapter/:id/quiz', element:<QuizPage/> },
   { path: '/chapter', element: <QuizPage /> },
   { path: '/chapter/:id/result', element: <ResultPage /> },
   { path: '/progress', element: <ProgressReport /> },
@@ -151,17 +152,8 @@ export const router = createBrowserRouter([
   { path: '/updateProfile', element: <UpdateProfile /> },
   { path: '/teacherupdateProfile', element: <TeacherUpdateProfile /> },
 
-  { path: '/studenttimeTable', element: <StudentTimeTable /> }
-
-
-
-  
-
-              
-
-
-
-
+  { path: '/studenttimeTable', element: <StudentTimeTable /> },
+  { path: '/adminApproval', element: <AdminApproval /> }
 
 
 ])

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 import Footer from "../components/Footer";
@@ -10,15 +10,17 @@ import {
   FaExclamationTriangle,
   FaCheck,
 } from "react-icons/fa";
-import { useMessage } from "../context/MessageContext"; 
-export default function AdminSettings() {
-  const { showSuccess, showError } = useMessage();
+import { useSelector } from "react-redux";
+import axios from "axios";
 
-  const [profile, setProfile] = useState({
-    name: "Admin User",
-    email: "admin@dlms.com",
-    phone: "9876543210",
-  });
+
+export default function AdminSettings() {
+
+  const login = useSelector((state) => state.auth.user);
+
+  const [previewImage, setPreviewImage] = useState(null);
+  const [admin, setAdmin] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   const [system, setSystem] = useState({
     school: "DLMS International School",
@@ -32,6 +34,36 @@ export default function AdminSettings() {
     sms: false,
   });
 
+  useEffect(() => {
+    if (login?.userDetails) {
+      setAdmin(login.userDetails);
+      loadProfileImage();
+    }
+  }, [login]);
+
+  const loadProfileImage = async () => {
+    try {
+      const res = await axios.get(
+        import.meta.env.VITE_API_BASE_URL +
+          "/login/getTeacherProfileImage",
+        {
+          params: {
+            teacherId: login?.userDetails?.loginid,
+            role: login?.userDetails?.role,
+          },
+        }
+      );
+
+      if (res.data) {
+        setPreviewImage(`data:image/jpeg;base64,${res.data}`);
+      }
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
+  if (!admin) return null;
+
   return (
     <div className="admin-settings-page">
       <Navbar />
@@ -43,49 +75,50 @@ export default function AdminSettings() {
 
           <h2 className="settings-title">Admin Settings</h2>
 
-          {/* -------------------- PROFILE -------------------- */}
+          {/* PROFILE */}
           <section className="settings-section">
             <h3 className="section-title">
               <FaUserCog className="icon" /> Profile Settings
             </h3>
 
-            <div className="profile-photo-row">
-              <img
-                src="/images/admin.png"
-                alt="Admin"
-                className="profile-photo"
-              />
-              <button className="btn-secondary">Change Photo</button>
+            <div className="admin-avatar-box">
+              {previewImage ? (
+                <img src={previewImage} className="admin-avatar" alt="Admin" />
+              ) : (
+                <div className="admin-avatar-placeholder">
+                  {admin?.fullName?.charAt(0)}
+                </div>
+              )}
             </div>
 
             <label>Name</label>
             <input
-              value={profile.name}
+              value={admin?.fullName || ""}
               onChange={(e) =>
-                setProfile({ ...profile, name: e.target.value })
+                setAdmin({ ...admin, fullName: e.target.value })
               }
             />
 
             <label>Email</label>
             <input
-              value={profile.email}
+              value={admin?.email || ""}
               onChange={(e) =>
-                setProfile({ ...profile, email: e.target.value })
+                setAdmin({ ...admin, email: e.target.value })
               }
             />
 
             <label>Phone</label>
             <input
-              value={profile.phone}
+              value={admin?.mobile || ""}
               onChange={(e) =>
-                setProfile({ ...profile, phone: e.target.value })
+                setAdmin({ ...admin, mobile: e.target.value })
               }
             />
 
             <button className="btn-primary">Change Password</button>
           </section>
 
-          {/* -------------------- SECURITY -------------------- */}
+          {/* SECURITY */}
           <section className="settings-section">
             <h3 className="section-title">
               <FaShieldAlt className="icon" /> Security Settings
@@ -95,20 +128,15 @@ export default function AdminSettings() {
               <span>Enable 2-Factor Authentication</span>
               <input type="checkbox" />
             </div>
-
-            <div className="toggle-row">
-              <span>Enable Login showErrors</span>
-              <input type="checkbox" defaultChecked />
-            </div>
           </section>
 
-          {/* -------------------- SYSTEM -------------------- */}
+          {/* SYSTEM */}
           <section className="settings-section">
             <h3 className="section-title">
               <FaSchool className="icon" /> System Settings
             </h3>
 
-            <label>School / Institute Name</label>
+            <label>School Name</label>
             <input
               value={system.school}
               onChange={(e) =>
@@ -124,7 +152,7 @@ export default function AdminSettings() {
               }
             />
 
-            <label>Default Class Timings</label>
+            <label>Class Timings</label>
             <input
               value={system.timings}
               onChange={(e) =>
@@ -133,47 +161,30 @@ export default function AdminSettings() {
             />
           </section>
 
-          {/* -------------------- NOTIFICATIONS -------------------- */}
+          {/* NOTIFICATIONS */}
           <section className="settings-section">
             <h3 className="section-title">
               <FaBell className="icon" /> Notification Settings
             </h3>
 
-            <div className="toggle-row">
-              <span>Allow Push Notifications</span>
-              <input
-                type="checkbox"
-                checked={notifications.push}
-                onChange={(e) =>
-                  setNotifications({ ...notifications, push: e.target.checked })
-                }
-              />
-            </div>
-
-            <div className="toggle-row">
-              <span>Email showErrors</span>
-              <input
-                type="checkbox"
-                checked={notifications.email}
-                onChange={(e) =>
-                  setNotifications({ ...notifications, email: e.target.checked })
-                }
-              />
-            </div>
-
-            <div className="toggle-row">
-              <span>SMS Notifications</span>
-              <input
-                type="checkbox"
-                checked={notifications.sms}
-                onChange={(e) =>
-                  setNotifications({ ...notifications, sms: e.target.checked })
-                }
-              />
-            </div>
+            {Object.keys(notifications).map((key) => (
+              <div className="toggle-row" key={key}>
+                <span>{key.toUpperCase()} Notifications</span>
+                <input
+                  type="checkbox"
+                  checked={notifications[key]}
+                  onChange={(e) =>
+                    setNotifications({
+                      ...notifications,
+                      [key]: e.target.checked,
+                    })
+                  }
+                />
+              </div>
+            ))}
           </section>
 
-          {/* -------------------- DANGER ZONE -------------------- */}
+          {/* DANGER ZONE */}
           <section className="danger-section">
             <h3 className="section-title danger-title">
               <FaExclamationTriangle className="icon" /> Danger Zone

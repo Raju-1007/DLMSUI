@@ -10,6 +10,7 @@ import Sidebar from "../components/Sidebar";
 import ChatWidget from "../components/ChatWidget";
 import Footer from "../components/Footer";
 import { useMessage } from "../context/MessageContext"; 
+import { Row, Col } from "react-bootstrap";
 
 export default function  HelpDesk() {
   const { showSuccess, showError } = useMessage();
@@ -76,18 +77,23 @@ export default function  HelpDesk() {
 
         {/* MAIN CONTENT */}
         <div className="student-main">
-          <h2 className="student-page-title">Help Desk</h2>
-
-          <div className="student-help-header">
-            <button className="student-btn-primary" onClick={() => setShowPopup(true)}>
-              + Raise New Ticket
-            </button>
-          </div>
-
+          <Row>
+            <Col lg={6} md={6} sm={12} className="sndsknkn">
+              <h2 className="student-page-title">Help Desk</h2>
+            </Col>
+          </Row>
           {/* TICKETS TABLE */}
           <div className="student-card">
-            <h3 className="student-card-title">Your Tickets</h3>
-
+            <Row className="SJNDJNFJS">
+              <Col lg={6} md={6} sm={12}>
+                <h3 className="student-card-title">Your Tickets</h3></Col>
+              <Col lg={6} md={6} sm={12} className="student-help-header text-end">
+                <button className="student-btn-primary" onClick={() => setShowPopup(true)}>
+                  Raise New Ticket
+                </button>
+              </Col>
+            </Row>
+            <div className="sdjnfjsn">
             <table className="student-table">
               <thead>
                 <tr>
@@ -99,13 +105,13 @@ export default function  HelpDesk() {
                 </tr>
               </thead>
 
-              <tbody>
+              <tbody className="studentsdlkfs">
                 {tickets.map((t) => (
                   <tr key={t.id}>
                     <td>{t.subject}</td>
                     <td>{t.category}</td>
                     <td>{t.priority}</td>
-                    <td>
+                    <td className="textcolojsnkdj">
                       <span
                         className={`ticket-badge ${
                           t.status === "Resolved" ? "green" : "yellow"
@@ -119,6 +125,7 @@ export default function  HelpDesk() {
                 ))}
               </tbody>
             </table>
+            </div>
           </div>
         </div>
       </div>

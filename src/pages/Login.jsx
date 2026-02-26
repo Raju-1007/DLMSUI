@@ -1,6 +1,3 @@
-
-
-
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
@@ -8,6 +5,7 @@ import { useDispatch } from "react-redux";
 import { loginUserThunk } from "../redux/authSlice";
 import { loginMock } from "../lib/auth";
 import { useMessage } from "../context/MessageContext";
+import {LoginActivity} from "../components/LoginActivity";
 
 export default function Login() {
   const nav = useNavigate();
@@ -39,6 +37,10 @@ export default function Login() {
   const [fpAadhar, setFpAadhar] = useState("");
   const [fpPassword, setFpPassword] = useState("");
   const [fpConfirmPassword, setFpConfirmPassword] = useState("");
+  const [passwordShown, setPasswordShown] = useState(false)
+  const [confirmPasswordShown, setConfirmPasswordShown] = useState(false);
+   const [passwordToggleClass, setPasswordToggleClass] = useState("")
+   const [email,setEmail]=useState("");
 
   /* ================= LOAD ================= */
   useEffect(() => {
@@ -52,6 +54,7 @@ export default function Login() {
     );
     setRoles(res.data.filter(r =>  r !== "STUDENT"));
     
+    
   };
 
   const loadCaptcha = async () => {
@@ -62,15 +65,24 @@ export default function Login() {
     setCaptchaId(res.data.captchaId);
   };
 
- 
+   useEffect(() => {
+     if (passwordShown == true) {
+       setPasswordToggleClass("visible")
+     }
+     if (passwordShown == false) { 
+       setPasswordToggleClass("notVisible")
+     }
+   }, [passwordShown])
+   const togglePassword = () => {
+     setPasswordShown(!passwordShown)
+   }
 
   /* ================= LOGIN ================= */
-  const doLogin = () => {
-    if (!password) return showError("Password required");
-
+  const doLogin = async () => {
+    if (!password) return showError("Please enter valid password");
     // STUDENT LOGIN
     if (loginType === "student") {
-      if (!studentId) return showError("Student ID required");
+      if (!studentId) return showError("Please enterr valid student ID");
 
       dispatch(
         loginUserThunk({
@@ -90,7 +102,7 @@ export default function Login() {
         .catch(() => 
           
           showError("Login failed"),
-          showError(err));
+        );
     }
 
     // DEPARTMENT LOGIN
@@ -115,13 +127,21 @@ export default function Login() {
         .unwrap()
         .then((res) => {
           loginMock(role);
-          if (res.userDetails.role === "ADMIN") 
+            LoginActivity(res,showSuccess, showError);// ✅ Correct way
+          if (res.userDetails.role === "ADMIN"){
+                
             nav("/admin/dashboard");
-          else if (res.userDetails.role === "SUPER_ADMIN")
+          }
+              
+          else if (res.userDetails.role === "SUPER_ADMIN"){
+           
             nav("/SuperAdminDashboard");
-          else 
+          }
+          else {
             // nav("/teacher/dashboard");
+             LoginActivity();
                 nav("/teacherupdateProfile");
+          }
         })
         .catch((err) => 
           
@@ -129,6 +149,29 @@ export default function Login() {
           );
     }
   };
+
+  const getLoginIdLabel = () => {
+    if (!role) return "";
+    if (role === "ADMIN") {
+      return {
+        label: "Admin ID *",
+        placeholder: "Enter Admin ID",
+      };
+    }
+    if (role === "TEACHER") {
+      return {
+        label: "Teacher ID *",
+        placeholder: "Enter Teacher ID",
+      };
+    }
+    if (role === "SUPER_ADMIN") {
+      return {
+        label: "Super Admin ID *",
+        placeholder: "Enter Super Admin ID",
+      };
+    }
+  };
+
 
   /* ================= FORGOT ================= */
   const handleForgotSubmit = async () => {
@@ -140,11 +183,12 @@ export default function Login() {
       return showError("Captcha must be 4 digits");
 
     await axios.post(
-      import.meta.env.VITE_API_BASE_URL + "/api/roles/forgot-password",
+      import.meta.env.VITE_API_BASE_URL + "/login/forgot-password",
       {
         aadhar: fpAadhar,
         newPassword: fpPassword,
         confirmPassword: fpConfirmPassword,
+        email:email,
         captchaId,
         captchaInput
       }
@@ -158,25 +202,25 @@ export default function Login() {
   return (
     <div className="page-container">
       <div className="login-card">
-        <h2 className="title">DLMS LOGIN</h2>
-<div className="login-type">
-  <label className="radio-option">
-          <input
-            type="radio"
-            checked={loginType === "student"}
-            onChange={() => setLoginType("student")}
-          />{" "}
-          Student Login
-        </label>
+        <h2 className="title">LOGIN</h2>
+        <div className="login-type">
+          <label className="radio-option">
+            <input
+              type="radio"
+              checked={loginType === "student"}
+              onChange={() => setLoginType("student")}
+            />{" "}
+            Student Login
+          </label>
 
-        <label className="radio-option">
-          <input
-            type="radio"
-            checked={loginType === "department"}
-            onChange={() => setLoginType("department")}
-          />{" "}
-          Department Login
-        </label>
+          <label className="radio-option">
+            <input
+              type="radio"
+              checked={loginType === "department"}
+              onChange={() => setLoginType("department")}
+            />{" "}
+            Department Login
+          </label>
         </div>
 
         {/* ========== STUDENT ========== */}
@@ -190,18 +234,25 @@ export default function Login() {
             />
 
             <label>Password *</label>
+            <div className="departmentPassword">
             <input
-              type="password"
+              type={passwordShown ? "text" : "password"}
               placeholder="Enter Password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
-           
+           <div className={`passwordToggle ${passwordShown ? "visible" : "notVisible"}`} onClick={togglePassword}>
+            <span>{passwordShown ? "Hide" : "Show"}</span>
+          </div>
+          </div>
              <p className="forgot-link" onClick={() => setShowForgot(true)}>
           Forgot Password?
         </p>
+        <div>
          <label>Captcha *</label>
+            <div className="captinput">
             <input
+              placeholder="Enter Captcha"
               className="captchainput"
               maxLength={4}
               value={captchaInput}
@@ -209,6 +260,7 @@ export default function Login() {
                 setCaptchaInput(e.target.value.replace(/\D/g, ""))
               }
             />
+            </div>
              <div className="captachInputrow">
             <div className="captcha-row">
               <div className="captcha-box">
@@ -221,6 +273,7 @@ export default function Login() {
               </button>
             </div>
             </div>
+          </div>
           <button className="login-btn" onClick={doLogin}>
           Login
         </button>
@@ -242,17 +295,16 @@ export default function Login() {
                 <option key={i}>{r}</option>
               ))}
             </select>
-
-           
-
-             <label>Student ID *</label>
-            <input
-              placeholder="Enter Teacher/Department ID"
-              value={departmentId}
-              onChange={(e) => setDepartmentId(e.target.value)}
-            />
-
-
+            {role && (
+              <>
+                <label>{getLoginIdLabel().label}</label>
+                <input
+                  placeholder={getLoginIdLabel().placeholder}
+                  value={departmentId}
+                  onChange={(e) => setDepartmentId(e.target.value)}
+                />
+              </>
+            )}
             <label>Password *</label>
             <input
               type="password"
@@ -260,39 +312,42 @@ export default function Login() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
-              <p className="forgot-link" onClick={() => setShowForgot(true)}>
-          Forgot Password?
-        </p>
+            <p className="forgot-link" onClick={() => setShowForgot(true)}>
+              Forgot Password?
+            </p>
 
             <label>Captcha *</label>
-            <input
-              className="captchainput"
-              maxLength={4}
-              value={captchaInput}
-              onChange={(e) =>
-                setCaptchaInput(e.target.value.replace(/\D/g, ""))
-              }
-            />
-           <div className="captachInputrow">
-            <div className="captcha-row">
-              <div className="captcha-box">
-                {captchaValue.split("").map((c, i) => (
-                  <span key={i}>{c}</span>
-                ))}
-              </div>
-              <button onClick={loadCaptcha} className="captcha-refresh-btn">
-                ↻
-              </button>
+            <div className="captinput">
+              <input
+                placeholder="Enter Captcha"
+                className="captchainput"
+                maxLength={4}
+                value={captchaInput}
+                onChange={(e) =>
+                  setCaptchaInput(e.target.value.replace(/\D/g, ""))
+                }
+              />
             </div>
-             <button className="login-btn" onClick={doLogin}>
-          Login
-        </button>
-            <p style={{ textAlign: "center" }}>
-          You dont have an account? <a href="/departmentLogin">register</a>
-        </p>
-      
-             </div>
-            
+            <div>
+            <div className="captachInputrow">
+              <div className="captcha-row">
+                <div className="captcha-box">
+                  {captchaValue.split("").map((c, i) => (
+                    <span key={i}>{c}</span>
+                  ))}
+                </div>
+                <button onClick={loadCaptcha} className="captcha-refresh-btn">
+                  ↻
+                </button>
+              </div>
+              <button className="loginjsx" onClick={doLogin}>
+                Login
+              </button>
+              <div className="registercss">
+            </div>
+            </div>
+            <p >You dont have an account? <a href="/departmentLogin">register</a></p>
+            </div>
           </>
         )}
        
@@ -319,6 +374,16 @@ export default function Login() {
               }
             />
 
+             <label>Email *</label>
+            <input
+            placeholder="Enter email"
+              maxLength={150}
+              value={email}
+              onChange={(e) =>
+                setEmail(e.target.value)
+              }
+            />
+
             <label>New Password *</label>
             <input
                placeholder="Enter password"
@@ -329,7 +394,7 @@ export default function Login() {
 
             <label>Confirm Password *</label>
             <input
-               placeholder="Enter confirmAadhaarNumber"
+               placeholder="Enter confirmPassword"
               type="password"
               value={fpConfirmPassword}
               onChange={(e) => setFpConfirmPassword(e.target.value)}

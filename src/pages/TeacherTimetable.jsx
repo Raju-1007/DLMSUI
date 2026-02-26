@@ -8,6 +8,7 @@ import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 import { useMessage } from "../context/MessageContext";
 import { useSelector } from "react-redux";
+import { useLocation } from "react-router-dom";
 
 const localizer = dayjsLocalizer(dayjs);
 function TeamsEvent({ event }) {
@@ -50,6 +51,13 @@ const eventStyleGetter = () => ({
 export default function TeacherTimetable() {
   const { showSuccess, showError } = useMessage();
   const login = useSelector((state) => state.auth.user);
+  const { state } = useLocation();
+  const timetable = state?.timetable;
+  const teacherMeta = state?.teacherMeta;
+  const teacherdata = state?.timetable
+
+  console.log(teacherMeta, ":::::::::::::::::teacherMeta::::::::::::::::", teacherdata);
+
 
   const [events, setEvents] = useState([]);
   const [selectedEvent, setSelectedEvent] = useState(null);
@@ -60,13 +68,14 @@ export default function TeacherTimetable() {
 
   const [scheduleData, setScheduleData] = useState({
     date: "",
-    startTime: "",
-    endTime: "",
+    startTime: teacherdata.startTime,
+    endTime: teacherdata.endTime,
+    classId: teacherMeta.classId,
+    className: teacherMeta.className,
+    description: teacherMeta.subjectName,
     studentId: "",
     studentName: "",
-    classId: "",
-    className: "",
-    description: "",
+
     remind: false,
   });
 
@@ -99,18 +108,28 @@ export default function TeacherTimetable() {
     loadTimetable();
   }, [login]);
 
-  /* ================= LOAD STUDENTS & CLASSES ================= */
   useEffect(() => {
-    if (!showSchedulePopup) return;
+    if (!showSchedulePopup || !teacherMeta) return;
 
     axios
-      .get(`${import.meta.env.VITE_API_BASE_URL}/login/login/studentData`)
-      .then((res) => setStudentsIds(res.data || []))
+      .get(`${import.meta.env.VITE_API_BASE_URL}/login/login/getStudentsByLocation`, {
+        params: {
+          districtId: teacherMeta.districtId,
+          mandalId: teacherMeta.mandalId,
+          villageId: teacherMeta.villageId,
+          classId: teacherMeta.classId
+        }
+      })
+      .then((res) => {
+        setStudentsIds([
+          { loginid: "ALL", fullName: "All Students" }, // ✅ ALL option
+          ...(res.data || [])
+        ]);
+      })
       .catch(() => setStudentsIds([]));
 
-    // reset classes on popup open
-    setClassList([]);
-  }, [showSchedulePopup]);
+  }, [showSchedulePopup, teacherMeta]);
+
 
   /* ================= HANDLERS ================= */
   const handleSelectEvent = (event) => {
@@ -136,6 +155,7 @@ export default function TeacherTimetable() {
     const payload = {
       ...scheduleData,
       teacherId: login?.userDetails?.loginid,
+
     };
 
     console.log("FINAL PAYLOAD 👉", payload);
@@ -174,23 +194,23 @@ export default function TeacherTimetable() {
           </div>
 
           <div className="tt-card" style={{ height: "650px" }}>
-           <Calendar
-  localizer={localizer}
-  events={events}
-  startAccessor="start"
-  endAccessor="end"
-  defaultView="week"
-  views={["week", "day", "agenda"]}
-  onSelectEvent={handleSelectEvent}
+            <Calendar
+              localizer={localizer}
+              events={events}
+              startAccessor="start"
+              endAccessor="end"
+              defaultView="week"
+              views={["week", "day", "agenda"]}
+              onSelectEvent={handleSelectEvent}
 
-  /* 🔑 MAIN FIX */
-  dayLayoutAlgorithm="no-overlap"   // ⬅️ same time events stack vertically
-  timeslots={1}
-  step={30}
+              /* 🔑 MAIN FIX */
+              dayLayoutAlgorithm="no-overlap"   // ⬅️ same time events stack vertically
+              timeslots={1}
+              step={30}
 
-  components={{ event: TeamsEvent }}
-  eventPropGetter={eventStyleGetter}
-/>
+              components={{ event: TeamsEvent }}
+              eventPropGetter={eventStyleGetter}
+            />
 
           </div>
         </div>
@@ -258,7 +278,10 @@ export default function TeacherTimetable() {
                     className="tt-input"
                     value={scheduleData.date}
                     onChange={(e) =>
-                      setScheduleData((p) => ({ ...p, date: e.target.value }))
+                      setScheduleData((p) => ({
+                        ...p,
+                        date: e.target.value,
+                      }))
                     }
                   />
                 </div>
@@ -280,6 +303,7 @@ export default function TeacherTimetable() {
                     }
                   />
                 </div>
+
                 <div>
                   <label className="tt-label">END TIME</label>
                   <input
@@ -302,75 +326,57 @@ export default function TeacherTimetable() {
                 <p>{calculateDuration()}</p>
               </div>
 
+              {/* CLASS (AUTO FROM teacherMeta) */}
+              <div className="tt-time-row">
+                <div>
+                  <label className="tt-label">CLASS</label>
+                  <input
+                    className="tt-input"
+                    value={scheduleData.className || ""}
+                    disabled
+                  />
+                </div>
+              </div>
+
               {/* STUDENT */}
               <div className="tt-time-row">
                 <div>
                   <label className="tt-label">STUDENT</label>
+
                   <select
                     className="tt-input"
-                    value={scheduleData.studentId}
+                    value={scheduleData.studentId || ""}
                     onChange={(e) => {
-                      const id = e.target.value;
-                      const s = studentsIds.find(
-                        (x) => String(x.loginid) === id
+                      const value = e.target.value;
+
+                      // ✅ ALL students
+                      if (value === "ALL") {
+                        setScheduleData((p) => ({
+                          ...p,
+                          studentId: "ALL",
+                          studentName: "All Students",
+                        }));
+                        return;
+                      }
+
+                      // ✅ Find student from API list
+                      const selectedStudent = studentsIds.find(
+                        (s) => String(s.studentid) === value
                       );
 
                       setScheduleData((p) => ({
                         ...p,
-                        studentId: s?.loginid || "",
-                        studentName: s?.fullName || "",
-                        classId: "",
-                        className: "",
+                        studentId: selectedStudent?.studentid || "",
+                        studentName: selectedStudent?.student_Name || "",
                       }));
-
-                      if (id) {
-                        axios
-                          .get(
-                            `${import.meta.env.VITE_API_BASE_URL}/login/login/getClassDetails/${id}`
-                          )
-                          .then((res) =>
-                            setClassList(res.data ? [res.data] : [])
-                          )
-                          .catch(() => setClassList([]));
-                      }
                     }}
                   >
                     <option value="">Select Student</option>
+                    <option value="ALL">All Students</option>
+
                     {studentsIds.map((s) => (
-                      <option key={s.loginid} value={s.loginid}>
-                        {s.fullName}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              {/* CLASS */}
-              <div className="tt-time-row">
-                <div>
-                  <label className="tt-label">CLASS</label>
-                  <select
-                    className="tt-input"
-                    value={scheduleData.classId}
-                    disabled={!classList.length}
-                    onChange={(e) => {
-                      const selectedId = e.target.value;
-
-                      const c = classList.find(
-                        (x) => String(x.classId) === selectedId
-                      );
-
-                      setScheduleData((p) => ({
-                        ...p,
-                        classId: c?.classId || "",
-                        className: c?.className || "",
-                      }));
-                    }}
-                  >
-                    <option value="">Select Class</option>
-                    {classList.map((c) => (
-                      <option key={c.classId} value={c.classId}>
-                        {c.className}
+                      <option key={s.studentid} value={s.studentid}>
+                        {s.student_Name}
                       </option>
                     ))}
                   </select>
@@ -378,7 +384,8 @@ export default function TeacherTimetable() {
               </div>
 
 
-              {/* DESCRIPTION */}
+
+              {/* DESCRIPTION (AUTO SUBJECT NAME) */}
               <div className="tt-desc-box">
                 <label className="tt-label">DESCRIPTION</label>
                 <textarea
@@ -408,6 +415,7 @@ export default function TeacherTimetable() {
                 Remind Me
               </label>
 
+              {/* SAVE */}
               <div className="tt-popup-footer">
                 <button className="tt-save-btn" onClick={handleSaveSchedule}>
                   Save Meeting
@@ -417,6 +425,7 @@ export default function TeacherTimetable() {
           </div>
         </div>
       )}
+
     </>
 
   );

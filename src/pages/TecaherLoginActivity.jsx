@@ -22,7 +22,7 @@ export default function TeacherLoginActivity() {
 
     const filteredData = (res.data || []).filter(
       (item) =>
-        item.role === "STUDENT" || item.role === "TEACHER"
+        item.role === "STUDENT" 
     );
 
     setActivities(filteredData);

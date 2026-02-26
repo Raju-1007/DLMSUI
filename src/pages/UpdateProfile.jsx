@@ -85,7 +85,7 @@ export default function UpdateProfile() {
   const fetchClasses = async () => {
     if (!formData.school) return [];
     const res = await axios.get(
-      "http://localhost:8080/login/getClasses",
+      "http://localhost:8080/login/login/getClasses",
       { params: { schoolId: formData.school.value } }
     );
     return res.data.map(c => ({
@@ -156,22 +156,22 @@ export default function UpdateProfile() {
               <div className="form-row">
                 <div className="form-group">
                   <label>Student Name</label>
-                  <input value={loginDetails.userDetails.fullName} disabled />
+                  <input placeholder="Student Name" value={loginDetails.userDetails.fullName} disabled />
                 </div>
                 <div className="form-group">
                   <label>Email</label>
-                  <input value={loginDetails.userDetails.email} disabled />
+                  <input placeholder="Email" value={loginDetails.userDetails.email} disabled />
                 </div>
               </div>
 
               <div className="form-row">
                 <div className="form-group">
                   <label>Phone</label>
-                  <input value={loginDetails.userDetails.mobile} disabled />
+                  <input placeholder="Phone" value={loginDetails.userDetails.mobile} disabled />
                 </div>
                 <div className="form-group">
                   <label>Roll No</label>
-                  <input value={loginDetails.userDetails.loginid} disabled />
+                  <input placeholder="Roll No" value={loginDetails.userDetails.loginid} disabled />
                 </div>
               </div>
 
@@ -257,6 +257,7 @@ export default function UpdateProfile() {
                 <div className="form-group">
                   <label>Student Address *</label>
                   <input
+                    placeholder="Enter Student Address"
                     value={formData.studentAddress}
                     onChange={(e) =>
                       setFormData(p => ({
@@ -273,6 +274,7 @@ export default function UpdateProfile() {
                 <div className="form-group">
                   <label>Relation Name *</label>
                   <input
+                    placeholder="Enter Relation Name"
                     value={formData.relationName}
                     onChange={(e) =>
                       setFormData(p => ({
@@ -305,6 +307,7 @@ export default function UpdateProfile() {
                 <div className="form-group">
                   <label>Relation Phone *</label>
                   <input
+                    placeholder="Enter Relation Phone"
                     value={formData.relationMobile}
                     onChange={(e) =>
                       setFormData(p => ({
@@ -318,6 +321,7 @@ export default function UpdateProfile() {
                 <div className="form-group">
                   <label>Relation email *</label>
                   <input
+                    placeholder="Enter Relation email"
                     value={formData.relationEmail}
                     onChange={(e) =>
                       setFormData(p => ({
@@ -332,6 +336,7 @@ export default function UpdateProfile() {
                 <div className="form-group">
                   <label>School address *</label>
                   <input
+                    placeholder="Enter School Address"
                     value={formData.schoolPhone}
                     onChange={(e) =>
                       setFormData(p => ({
@@ -345,6 +350,7 @@ export default function UpdateProfile() {
                 <div className="form-group">
                   <label>School Type *</label>
                   <select
+                    placeholder="Enter School Type"
                     value={formData.schoolType}
                     onChange={(e) =>
                       setFormData(p => ({
@@ -362,7 +368,7 @@ export default function UpdateProfile() {
                 
 
               <div className="form-actions">
-                <button type="submit" className="submit-btn">
+                <button type="submit" className="submit-btn" >
                   Update Profile
                 </button>
               </div>

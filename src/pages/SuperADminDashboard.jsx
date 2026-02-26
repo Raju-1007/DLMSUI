@@ -5,7 +5,9 @@ import Footer from "../components/Footer";
 import axios from "axios";
 
 import { useMessage } from "../context/MessageContext"; 
-import LoginActivity from "../components/LoginActivity";
+
+
+
 
 export default function SuperAdminDashboard() {
 
@@ -17,7 +19,7 @@ export default function SuperAdminDashboard() {
  
 
   }, []);
-  LoginActivity();
+ 
 
   // ==========================================
   //  HARD CODED FALLBACK DATA
@@ -78,7 +80,10 @@ export default function SuperAdminDashboard() {
   // ==========================================
   const loadSummary = async () => {
     try {
-      const res = await axios.get("/super-admin/dashboard-summary");
+     
+      const res = await axios.get(
+                `${import.meta.env.VITE_API_BASE_URL}/analytics/getSuperAdminDashBoardDetails`
+              );
 
       console.log("API Response:", res?.data);
 
@@ -93,11 +98,12 @@ export default function SuperAdminDashboard() {
       const finalData = {
         states: data.states ?? fallback.states,
         districts: data.districts ?? fallback.districts,
-        talukas: data.talukas ?? fallback.talukas,
+        // talukas: data.talukas ?? fallback.talukas,
         villages: data.villages ?? fallback.villages,
         schools: data.schools ?? fallback.schools,
         teachers: data.teachers ?? fallback.teachers,
-        students: data.students ?? fallback.students,
+        students: data.studentCount ?? fallback.students,
+         talukas: data.mandals,
 
         growth: {
           students: data?.growth?.students ?? fallback.growth.students,
@@ -119,8 +125,8 @@ export default function SuperAdminDashboard() {
             : fallback.notifications,
 
         teachersTable:
-          data.teachersTable?.length > 0
-            ? data.teachersTable
+          data.teachersList?.length > 0
+            ? data.teachersList
             : fallback.teachersTable,
       };
 
@@ -231,22 +237,24 @@ export default function SuperAdminDashboard() {
                 <tr>
                   <th>Name</th>
                   <th>ID</th>
-                  <th>Department</th>
-                  <th>Completed (%)</th>
-                  <th>Rating</th>
-                  <th>Status</th>
+                  <th>rating</th>
+                  <th>Classes</th>
+                  <th>Subjects</th>
+                  <th>JoiningData</th>
+                 
                 </tr>
               </thead>
 
               <tbody>
                 {summary.teachersTable.map((t, i) => (
                   <tr key={i}>
-                    <td>{t.name}</td>
-                    <td>{t.id}</td>
-                    <td>{t.department}</td>
-                    <td>{t.completed}%</td>
-                    <td>{"⭐".repeat(t.rating)}</td>
-                    <td>{t.status}</td>
+                    <td>{t.teacher_name}</td>
+                    <td>{t.teacher_service_id}</td>
+                    <td>{t.teacher_department}</td>
+                     <td>{t.class_name}</td>
+                     <td>{t.teacher_subjects}</td>
+                     <td>{t.teacher_joining_date}</td>
+                   
                   </tr>
                 ))}
               </tbody>

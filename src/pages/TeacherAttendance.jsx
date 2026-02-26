@@ -3,104 +3,97 @@ import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 import Footer from "../components/Footer";
 import axios from "axios";
-import { useMessage } from "../context/MessageContext"; 
-
+import { useMessage } from "../context/MessageContext";
+import { useSelector } from "react-redux";
 
 export default function TeacherAttendance() {
-  const { showSuccess, showError } = useMessage();
-  const [date, setDate] = useState(
-    new Date().toISOString().slice(0, 10)
-  );
 
-  const [students, setStudents] = useState([]);
-  const [studentsIds, setStudentsIds] = useState([]);
+  const { showError } = useMessage();
+  const login = useSelector((state) => state.auth.user);
 
-  const [showAddPopup, setShowAddPopup] = useState(false);
-  const [newStudent, setNewStudent] = useState({
-    studentId: "",
-    name: "",
-    className: "",
-    section: "",
-    subject: "",
-    status: "Present",
-  });
+  const [teacherProfile, setTeacherProfile] = useState(null);
+  const [rows, setRows] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const[StudentClassDetails,setStudentClassDetails]=useState("");
+
+  /* ================= LOAD PROFILE FIRST ================= */
 
   useEffect(() => {
-    loadAttendance();
-    getStudentIds();
-  }, [date]);
+    if (login?.userDetails?.loginid) {
+      loadProfile();
+    }
+  }, [login]);
 
-  /* ================= API ================= */
+  /* ================= LOAD ATTENDANCE AFTER PROFILE ================= */
 
-  const getStudentIds = async () => {
+  useEffect(() => {
+    if (teacherProfile?.subjectName) {
+      loadAttendanceBySubject();
+    }
+  }, [teacherProfile]);
+
+
+  useEffect(() => {
+    if (rows) {
+      getStudentClassDetails();
+    }
+  }, [rows]);
+
+
+  /* ================= API CALLS ================= */
+
+  const loadProfile = async () => {
     try {
       const res = await axios.get(
-        import.meta.env.VITE_API_BASE_URL +
-          "/api/roles/studentGetDataAttendance"
+        `${import.meta.env.VITE_API_BASE_URL}/login/login/teacher/profile/${login.userDetails.loginid}`
       );
-      console.log("STUDENT IDS 👉", res.data); // debug
-      setStudentsIds(res.data || []);
+
+      setTeacherProfile(res.data);
     } catch {
-      setStudentsIds([]);
+      showError("Failed to load teacher profile");
     }
   };
 
-  const loadAttendance = async () => {
+  const loadAttendanceBySubject = async () => {
     try {
+      setLoading(true);
+
       const res = await axios.get(
-        import.meta.env.VITE_API_BASE_URL +
-          `/api/attendances/attendance?date=${date}`
-      );
-      setStudents(res.data || []);
-    } catch {
-      setStudents([]);
-    }
-  };
-
-  /* ================= SELECT STUDENT (WORKING) ================= */
-
-  const handleStudentSelect = (loginid) => {
-    const selected = studentsIds.find(
-      (s) => String(s.loginid) === loginid
-    );
-
-    if (!selected) return;
-
-    setNewStudent((prev) => ({
-      ...prev,
-      studentId: String(selected.loginid), // ✅ ID
-      name: selected.fullName || "",        // ✅ ONLY NAME
-    }));
-  };
-
-  /* ================= ADD ================= */
-
-  const addNewStudent = async () => {
-    try {
-      const res = await axios.post(
-        import.meta.env.VITE_API_BASE_URL +
-          "/api/attendances/addattendance",
+        `${import.meta.env.VITE_API_BASE_URL}/analytics/api/grades/getBySubjectAttendance`,
         {
-          ...newStudent,
-          studentId: Number(newStudent.studentId), // backend safe
-          mark: newStudent.status,
-          date,
+          params: {
+            subjectName: teacherProfile.subjectName,
+          },
+        }
+
+      );
+
+      setRows(res.data || []);
+    } catch {
+      showError("Failed to load attendance");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getStudentClassDetails = async () => {
+    try {
+
+      setLoading(true);
+
+      const res = await axios.get(
+        `${import.meta.env.VITE_API_BASE_URL}/analytics/api/grades/getStudentClassDetails`,
+        {
+          params: {
+            loginId: rows[0].studentId,
+          },
         }
       );
-
-      setStudents((prev) => [...prev, res.data]);
-      setShowAddPopup(false);
-
-      setNewStudent({
-        studentId: "",
-        name: "",
-        className: "",
-        section: "",
-        subject: "",
-        status: "Present",
-      });
+      setStudentClassDetails(res.data[0] || []);
     } catch {
-      showError("Add failed ❌");
+      showError("Failed to load attendance");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -114,129 +107,68 @@ export default function TeacherAttendance() {
         <Sidebar />
 
         <div className="teacher-main">
-          <h2>Attendance Tracker</h2>
 
-          <button className="ta-add-btn" onClick={() => setShowAddPopup(true)}>
-            + Add Attendance
-          </button>
+          <div className="ta-header">
+            <h2>Attendance Tracker</h2>
+            {teacherProfile && (
+              <div>
+                <strong>Subject:</strong> {teacherProfile.subjectName}
+              </div>
+            )}
+          </div>
 
-          <table className="ta-table">
-            <thead>
-              <tr>
-                <th>Student ID</th>
-                <th>Name</th>
-                <th>Class</th>
-                <th>Section</th>
-                <th>Subject</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {students.map((s) => (
-                <tr key={s.id}>
-                  <td>{s.studentId}</td>
-                  <td>{s.name}</td>
-                  <td>{s.className}</td>
-                  <td>{s.section}</td>
-                  <td>{s.subject}</td>
-                  <td>{s.status}</td>
+          {loading ? (
+            <div style={{ padding: "20px" }}>Loading attendance...</div>
+          ) : (
+            <table className="ta-table">
+              <thead>
+                <tr>
+                  <th>Student ID</th>
+                  <th>Name</th>
+                  <th>Subject</th>
+                  <th>className</th>
+                  <th>Date</th>
+                  <th>Status</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+
+              <tbody>
+                {rows.length > 0 ? (
+                  rows.map((s) => (
+                    <tr key={s.id}>
+                      <td>{s.studentId}</td>
+                      <td>{s.studentName}</td>
+                      <td>{s.subjectName}</td>
+                      <td>{StudentClassDetails.class_name}</td>
+                      <td>{s.date}</td>
+                      <td>
+                        <span
+                          className={`ta-badge ${
+                            s.attendance === "Active"
+                              ? "ta-green"
+                              : s.attendance === "Absent"
+                              ? "ta-red"
+                              : "ta-yellow"
+                          }`}
+                        >
+                          {s.attendance}
+                        </span>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="5" style={{ textAlign: "center" }}>
+                      No attendance records found
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          )}
+
         </div>
       </div>
-
-      {/* ================= ADD POPUP ================= */}
-
-      {showAddPopup && (
-        <div className="ta-overlay">
-          <div className="ta-popup">
-            <h3>Add Attendance</h3>
-
-            {/* STUDENT SELECT */}
-            <label>Select Student Id<span className="req">*</span></label>
-            <select className="teacherGetAttendanceId"
-              value={newStudent.studentId}
-              onChange={(e) =>
-                handleStudentSelect(e.target.value)
-              }
-            >
-              <option value="">Select Student</option>
-              {studentsIds.map((stu) => (
-                <option
-                  key={stu.loginid}
-                  value={String(stu.loginid)}
-                >
-                  {stu.loginid}
-                </option>
-              ))}
-            </select>
-
-            {/* NAME AUTO FILL */}
-            <input
-              placeholder="Name"
-              value={newStudent.name}
-              readOnly
-            />
-   
-           <label>Enter Class Name<span className="req">*</span></label>
-            <input
-              placeholder="Class"
-              value={newStudent.className}
-              onChange={(e) =>
-                setNewStudent({
-                  ...newStudent,
-                  className: e.target.value,
-                })
-              }
-            />
-           <label>Enter Secation Name<span className="req">*</span></label>
-            <input
-              placeholder="Section"
-              value={newStudent.section}
-              onChange={(e) =>
-                setNewStudent({
-                  ...newStudent,
-                  section: e.target.value,
-                })
-              }
-            />
-           <label>Enter Subject Name<span className="req">*</span></label>
-            <input
-              placeholder="Subject"
-              value={newStudent.subject}
-              onChange={(e) =>
-                setNewStudent({
-                  ...newStudent,
-                  subject: e.target.value,
-                })
-              }
-            />
-            <label>Select Attendance<span className="req">*</span></label>
-            <select className="selectAttendance"
-              value={newStudent.status}
-              onChange={(e) =>
-                setNewStudent({
-                  ...newStudent,
-                  status: e.target.value,
-                })
-              }
-            >
-              <option>Present</option>
-              <option>Absent</option>
-              <option>Late</option>
-              <option>Excused</option>
-            </select>
-
-            <button onClick={addNewStudent}>Add</button>
-            <button onClick={() => setShowAddPopup(false)}>
-              Cancel
-            </button>
-          </div>
-        </div>
-      )}
 
       <Footer />
     </div>

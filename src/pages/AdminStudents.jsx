@@ -12,6 +12,10 @@ const { showSuccess, showError } = useMessage();
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
 
+  const [page, setPage] = useState(0);
+    const [size] = useState(5);
+    const[totalPages,setTotalPages]=useState("");
+
   // 🔥 One variable for both APIs
   const [data, setData] = useState({
     students: [],
@@ -27,14 +31,27 @@ const { showSuccess, showError } = useMessage();
       setLoading(true);
       try {
         const [studentRes, courseRes] = await Promise.all([
-          axios.get(import.meta.env.VITE_API_BASE_URL+"/login/login/studentData"),
-          axios.get(import.meta.env.VITE_API_BASE_URL+"/login/login/getStudentWithClassDetails")
+          axios.get(import.meta.env.VITE_API_BASE_URL+"/login/login/studentData",{
+            params:{
+              page:page,
+              size:size,
+            }
+          }),
+          axios.get(import.meta.env.VITE_API_BASE_URL+"/login/login/getStudentWithClassDetails",{
+             params:{
+              page:page,
+              size:size,
+             }
+          })
         ]);
 
         setData({
-          students: studentRes.data || [],
-          courses: courseRes.data || []
+          students: studentRes.data.content || [],
+          courses: courseRes.data .content|| []
         });
+             setTotalPages(studentRes.data.totalPages);
+             setTotalPages(courseRes.data.totalPages);
+              
 
       } catch (error) {
         showError("Error loading data", error);
@@ -164,6 +181,25 @@ const { showSuccess, showError } = useMessage();
             )}
 
           </div>
+            <div className="admin-pagination">
+              <button
+                disabled={page === 0}
+                onClick={() => setPage(page - 1)}
+              >
+                Previous
+              </button>
+
+              <span>
+                Page {page + 1} of {totalPages}
+              </span>
+
+              <button
+                disabled={page + 1 >= totalPages}
+                onClick={() => setPage(page + 1)}
+              >
+                Next
+              </button>
+            </div>
         </div>
       </div>
 

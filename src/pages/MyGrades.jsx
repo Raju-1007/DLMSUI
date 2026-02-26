@@ -3,107 +3,124 @@ import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 import axios from "axios";
 import { useSelector } from "react-redux";
-import { useMessage } from "../context/MessageContext"; 
+import { useMessage } from "../context/MessageContext";
+
 
 export default function MyGrades() {
-  const { showSuccess, showError } = useMessage();
+  const { showError } = useMessage();
   const loginDetails = useSelector((state) => state.auth.user);
 
-  const [grades, setGrades] = useState([]);   // ✅ ARRAY
+  const [grades, setGrades] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (loginDetails?.loginId) {
-      loadAssignments();
+    if (loginDetails?.userDetails?.loginid) {
+      fetchGrades();
     }
   }, [loginDetails]);
 
-  const loadAssignments = async () => {
+  const fetchGrades = async () => {
     try {
       const res = await axios.get(
-        import.meta.env.VITE_API_BASE_URL+"/api/grades/getStudentGrades",
+        `${import.meta.env.VITE_API_BASE_URL}/analytics/api/grades/getScoreDetails`,
         {
           params: {
-            studentId: loginDetails.loginId,
+            studentId: loginDetails?.userDetails?.loginid,
           },
         }
       );
 
-      if (res.data && res.data.length > 0) {
-        setGrades(res.data);   // ✅ ARRAY
-      } else {
-        setGrades([]);
-      }
-    } catch(err) {
-       showError("API failed", err);
-      setGrades([]);
+      setGrades(res.data || []);
+    } catch (error) {
+      showError("Error fetching grades");
     } finally {
-      setLoading(false);      // ✅ IMPORTANT
+      setLoading(false);
     }
   };
 
-  const getGradeColor = (grade) => {
-    if (!grade) return "#6b7280";
-    if (grade.startsWith("A")) return "#16a34a";
-    if (grade.startsWith("B")) return "#2563eb";
-    return "#dc2626";
+  // 🎯 Status Logic
+  const getStatus = (percentage) => {
+    if (percentage < 35)
+      return { text: "Low Performance", color: "#dc2626" };
+    if (percentage >= 80)
+      return { text: "Very Good", color: "#16a34a" };
+    if (percentage >= 60)
+      return { text: "Good", color: "#2563eb" };
+    return { text: "Average", color: "#f59e0b" };
   };
 
   return (
     <div>
       <Navbar />
-      <div style={{ display: "grid", gridTemplateColumns: "250px 1fr" }}>
+
+      <div className="layout">
         <Sidebar />
 
-        <div style={{ padding: 24 }}>
-          <h2 style={{ marginBottom: 20, fontSize: 24, fontWeight: 700 }}>
-            📘 My Grades
-          </h2>
+        <div className="content">
+          <h2 className="page-title">📘 My Grades</h2>
 
-          <div style={{ background: "#fff", padding: 16, minHeight: "60vh" }}>
+          <div className="grade-container">
             {loading ? (
-              <div style={{ textAlign: "center", fontSize: 18 }}>
-                ⏳ Fetching grades...
-              </div>
-            ) : grades.length === 0 ? (   // ✅ FIX
-              <div style={{ textAlign: "center", marginTop: 40 }}>
-                📭 No grades available yet.
-              </div>
+              <div className="loading">⏳ Fetching grades...</div>
+            ) : grades.length === 0 ? (
+              <div className="no-data">📭 No grades available yet.</div>
             ) : (
-              <table style={{ width: "100%", borderCollapse: "collapse" }}>
+              <table className="grade-table">
                 <thead>
                   <tr>
-                    <th style={thStyle}>Student ID</th>
-                    <th style={thStyle}>Student</th>
-                    <th style={thStyle}>Class</th>
-                    <th style={thStyle}>Subject</th>
-                    <th style={thStyle}>Assessment</th>
-                    <th style={thStyle}>Marks</th>
-                    <th style={thStyle}>Out Of</th>
-                    <th style={thStyle}>Grade</th>
+                    <th>Subject</th>
+                    <th>Marks</th>
+                    <th>Out Of</th>
+                    <th>Percentage</th>
+                    <th>date</th>
+                    <th>Status</th>
+                    <th>Progress</th>
                   </tr>
                 </thead>
+
                 <tbody>
-                  {grades.map((g, i) => (
-                    <tr key={i}>
-                      <td style={tdStyle}>{g.studentId}</td>
-                      <td style={tdStyle}>{g.student}</td>
-                      <td style={tdStyle}>{g.className}</td>
-                      <td style={tdStyle}>{g.subject}</td>
-                      <td style={tdStyle}>{g.assessment}</td>
-                      <td style={tdStyle}>{g.marks}</td>
-                      <td style={tdStyle}>{g.outOf}</td>
-                      <td
-                        style={{
-                          ...tdStyle,
-                          fontWeight: 600,
-                          color: getGradeColor(g.grade),
-                        }}
-                      >
-                        {g.grade}
-                      </td>
-                    </tr>
-                  ))}
+                  {grades.map((g, i) => {
+                    const percentage = Math.round(
+                      (g.score / g.total) * 100
+                    );
+                    const status = getStatus(percentage);
+
+                    return (
+                      <tr key={i}>
+                        <td>{g.assessmentName}</td>
+                        <td>{g.score}</td>
+                        <td>{g.total}</td>
+                        <td>{percentage}%</td>
+                        <td>{g.date}</td>
+
+                        <td
+                          style={{
+                            color: status.color,
+                            fontWeight: 600,
+                          }}
+                        >
+                          {status.text}
+                        </td>
+
+                        <td>
+                          <div className="progress-wrapper">
+                            <div
+                              className="progress-fill"
+                              style={{
+                                width: `${percentage}%`,
+                                background: status.color,
+                              }}
+                            ></div>
+
+                            {/* Tooltip */}
+                            <span className="tooltip">
+                              {status.text}
+                            </span>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             )}
@@ -113,13 +130,3 @@ export default function MyGrades() {
     </div>
   );
 }
-
-const thStyle = {
-  padding: "12px",
-  borderBottom: "2px solid #e2e8f0",
-};
-
-const tdStyle = {
-  padding: "10px",
-  borderBottom: "1px solid #e5e7eb",
-};

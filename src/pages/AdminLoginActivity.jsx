@@ -17,12 +17,12 @@ export default function AdminLoginActivity() {
   const fetchLoginActivities = async () => {
   try {
     const res = await axios.get(
-      `${import.meta.env.VITE_API_BASE_URL}/api/roles/getLoginActivityData`
+      `${import.meta.env.VITE_API_BASE_URL}/login/login/getLoginActivityData`
     );
 
     const filteredData = (res.data || []).filter(
       (item) =>
-        item.role === "ADMIN" || item.role === "TEACHER"
+        item.role === "TEACHER"
     );
 
     setActivities(filteredData);

@@ -1,177 +1,244 @@
 // src/pages/AdminProfile.jsx
+
 import React, { useEffect, useState } from "react";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 import Footer from "../components/Footer";
 import { useSelector } from "react-redux";
-import { useMessage } from "../context/MessageContext";
 import axios from "axios";
 
 export default function AdminProfile() {
-   const { showSuccess, showError } = useMessage();
-   
-    const[adminData,setAdminData]=useState(null);
-    const login=useSelector((state)=>state.auth.user)
 
+  const login = useSelector((state) => state.auth.user);
+  const adminId = login?.userDetails?.loginid;
 
-useEffect(() => {
-  if (login?.loginId) {
-    getInstructorDetails();
-  }
-}, [login?.loginId]);
+  const [admin, setAdmin] = useState(null);
+  const [previewImage, setPreviewImage] = useState(null);
+  const [dashboard, setDashboard] = useState(null);
 
-  const getInstructorDetails = async () => {
-  try {
-    const res = await axios.get(
-      import.meta.env.VITE_API_BASE_URL +
-        "/api/roles/getAdminData"
-    );
-     let getAdminData = res.data.filter((prev) => prev.loginid === login?.loginId && prev.role ==login?.role) || [];
-    
-    setAdminData( getAdminData[0] || []);
-    
-  } catch (err) {
-    showError(err?.message || "Failed to load instructor details");
-    setAdminData([]);
-  }
-};
+  useEffect(() => {
+    if (adminId) {
+      setAdmin(login?.userDetails);
+      loadProfileImage();
+      loadDashboard();
+    }
+  }, [adminId]);
 
+  /* ================= DASHBOARD ================= */
 
- 
-  // MOCK DATA (replace with API later)
-  const admin = adminData?{
-    name: adminData?.fullName,
-    adminId: adminData?.loginid,
-    role: adminData?.role,
-    department: "Academic Administration",
-    email: adminData?.email,
-    phone: adminData?.mobile,
-    status:"Activated"
-    
-  }:null;
-  console.log(admin,"teacherIdsteacherIdsteacherIds");
+  const loadDashboard = async () => {
+    try {
+      const res = await axios.get(
+        "http://localhost:8080/analytics/getSuperAdminDashBoardDetails"
+      );
+      setDashboard(res.data);
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
+  const renderGrowth = (value) => {
+    if (value > 0)
+      return <span className="growth-badge growth-positive">▲ {value}%</span>;
+
+    if (value < 0)
+      return (
+        <span className="growth-badge growth-negative">
+          ▼ {Math.abs(value)}%
+        </span>
+      );
+
+    return <span className="growth-badge growth-neutral">0%</span>;
+  };
+
+  /* ================= PROFILE IMAGE ================= */
+
+  const loadProfileImage = async () => {
+    try {
+      const res = await axios.get(
+        import.meta.env.VITE_API_BASE_URL +
+          "/login/getTeacherProfileImage",
+        {
+          params: {
+            teacherId: adminId,
+            role: login?.userDetails?.role
+          }
+        }
+      );
+
+      if (res.data) {
+        setPreviewImage(`data:image/jpeg;base64,${res.data}`);
+      }
+
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
+  const handleImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append("teacherId", adminId);
+    formData.append("file", file);
+    formData.append("role", login?.userDetails?.role);
+
+    try {
+      await axios.post(
+        import.meta.env.VITE_API_BASE_URL +
+          "/login/uploadTeacherProfileImage",
+        formData,
+        { headers: { "Content-Type": "multipart/form-data" } }
+      );
+      loadProfileImage();
+    } catch {
+      alert("Upload failed");
+    }
+  };
+
+  const handleRemoveImage = async () => {
+    try {
+      await axios.delete(
+        import.meta.env.VITE_API_BASE_URL +
+          "/login/removeTeacherProfileImage",
+        {
+          params: {
+            teacherId: adminId,
+            role: login?.userDetails?.role
+          }
+        }
+      );
+      setPreviewImage(null);
+    } catch {
+      alert("Remove failed");
+    }
+  };
 
   return (
-    <div>
+    <>
       <Navbar />
 
-      <div className="sp-layout">
+      <div className="admin-layout">
         <Sidebar />
 
-        <div className="sp-main">
+        <div className="admin-main">
 
-          {/* ================= ADMIN PROFILE CARD ================= */}
-          <div className="sp-card">
-            <div className="sp-profile">
-              <div>
-                <h3>Admin Profile</h3>
-                <p><b>Name:</b> {admin?.name}</p>
-                <p><b>Admin Id:</b> {admin?.adminId}</p>
-                <p><b>Role:</b> {admin?.role}</p>
-                <p><b>Department:</b> {admin?.department}</p>
-                <p><b>Email:</b> {admin?.email}</p>
-                <p><b>Phone:</b> {admin?.phone}</p>
-                <p>
-                  <b>Status:</b>{" "}
-                  <span className="green">{admin?.status}</span>
-                </p>
+          {/* PROFILE CARD */}
+          <div className="admin-card">
+            <div className="admin-profile">
+
+              <div className="admin-avatar-box">
+                {previewImage ? (
+                  <img src={previewImage} className="admin-avatar" alt="Admin" />
+                ) : (
+                  <div className="admin-avatar-placeholder">
+                    {admin?.fullName?.charAt(0)}
+                  </div>
+                )}
+
+                <label className="admin-change-btn">
+                  Change
+                  <input
+                    type="file"
+                    hidden
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                  />
+                </label>
+
+                {previewImage && (
+                  <button
+                    className="admin-remove-btn"
+                    onClick={handleRemoveImage}
+                  >
+                    Remove
+                  </button>
+                )}
               </div>
 
-              <div className="sp-rating">
-                <div className="sp-image">Image</div>
-                <p>Admin Rating</p>
-                <span>4.7 ⭐</span>
+              <div className="admin-info">
+                <h2>{admin?.fullName}</h2>
+
+                <div className="admin-info-grid">
+                  <p><b>Admin ID:</b> {admin?.loginid}</p>
+                  <p><b>Role:</b> {admin?.role}</p>
+                  <p><b>Email:</b> {admin?.email}</p>
+                  <p><b>Phone:</b> {admin?.mobile}</p>
+                  <p><b>Status:</b> <span className="status-active">Active</span></p>
+                </div>
               </div>
+
             </div>
           </div>
 
-          {/* ================= ACADEMIC MANAGEMENT SUMMARY ================= */}
-          <div className="sp-card">
-            <h4>Academic Management Summary</h4>
+          {/* DASHBOARD STATS */}
+          <div className="admin-card">
+            <h3>Academic Management Summary</h3>
 
-            <table className="sp-table">
-              <thead>
-                <tr>
-                  <th>Category</th>
-                  <th>Handled</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr><td>Total Students Managed</td><td>850</td></tr>
-                <tr><td>Total Teachers Coordinated</td><td>55</td></tr>
-                <tr><td>Classes Assigned</td><td>28</td></tr>
-                <tr><td>Subjects Managed</td><td>45</td></tr>
-              </tbody>
-            </table>
+            <div className="admin-stats-grid">
+
+              <div className="stat-box">
+                <h4>Students</h4>
+                <p>{dashboard?.studentCount ?? 0}</p>
+                {dashboard && renderGrowth(dashboard.growth.students)}
+              </div>
+
+              <div className="stat-box">
+                <h4>Teachers</h4>
+                <p>{dashboard?.teachers ?? 0}</p>
+                {dashboard && renderGrowth(dashboard.growth.teachers)}
+              </div>
+
+              <div className="stat-box">
+                <h4>Schools</h4>
+                <p>{dashboard?.schools ?? 0}</p>
+                {dashboard && renderGrowth(dashboard.growth.schools)}
+              </div>
+
+              <div className="stat-box">
+                <h4>Mandals</h4>
+                <p>{dashboard?.mandals ?? 0}</p>
+              </div>
+
+              <div className="stat-box">
+                <h4>Villages</h4>
+                <p>{dashboard?.villages ?? 0}</p>
+              </div>
+
+              <div className="stat-box">
+                <h4>Districts</h4>
+                <p>{dashboard?.districts ?? 0}</p>
+              </div>
+
+            </div>
           </div>
 
-          {/* ================= ATTENDANCE & PERFORMANCE ================= */}
-          <div className="sp-card">
-            <h4>Attendance & Performance Overview</h4>
+          {/* TEACHERS TABLE */}
+          <div className="admin-card">
+            <h3>Teachers Overview</h3>
 
-            <table className="sp-table">
+            <table className="admin-table">
               <thead>
                 <tr>
-                  <th>Metric</th>
-                  <th>Current Status</th>
+                  <th>Name</th>
+                  <th>Service ID</th>
+                  <th>Subject</th>
+                  <th>Class</th>
+                  <th>Joining Date</th>
                 </tr>
               </thead>
+
               <tbody>
-                <tr>
-                  <td>Average Student Attendance</td>
-                  <td className="green">89%</td>
-                </tr>
-                <tr>
-                  <td>Students Needing Attention</td>
-                  <td className="yellow">12%</td>
-                </tr>
-                <tr>
-                  <td>Overall Pass Percentage</td>
-                  <td className="green">91%</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-
-          {/* ================= ADMIN ACTIVITY SUMMARY ================= */}
-          <div className="sp-card">
-            <h4>Admin Activity Summary</h4>
-            <ul className="sp-list">
-              <li>✔ Students Approved: 320</li>
-              <li>✔ Teachers Assigned to Classes: 45</li>
-              <li>✔ Courses Approved: 60</li>
-              <li>✔ Reports Generated: 25</li>
-            </ul>
-          </div>
-
-          {/* ================= RECENT ADMIN ACTIONS ================= */}
-          <div className="sp-card">
-            <h4>Recent Admin Actions</h4>
-
-            <table className="sp-table">
-              <thead>
-                <tr>
-                  <th>Date</th>
-                  <th>Action</th>
-                  <th>Description</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>20 Dec</td>
-                  <td>Student Approved</td>
-                  <td>New student account approved</td>
-                </tr>
-                <tr>
-                  <td>18 Dec</td>
-                  <td>Teacher Assigned</td>
-                  <td>Maths teacher assigned to 10th A</td>
-                </tr>
-                <tr>
-                  <td>17 Dec</td>
-                  <td>Report Generated</td>
-                  <td>Monthly attendance report</td>
-                </tr>
+                {dashboard?.teachersList?.map((t, index) => (
+                  <tr key={index}>
+                    <td>{t.teacher_name}</td>
+                    <td>{t.teacher_service_id}</td>
+                    <td>{t.teacher_subjects}</td>
+                    <td>{t.class_name}</td>
+                    <td>{t.teacher_joining_date}</td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
@@ -180,6 +247,6 @@ useEffect(() => {
       </div>
 
       <Footer />
-    </div>
+    </>
   );
 }

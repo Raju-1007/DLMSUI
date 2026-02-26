@@ -2,8 +2,8 @@ import React, { useEffect, useState } from "react";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 import Footer from "../components/Footer";
-import { useMessage } from "../context/MessageContext"; 
-
+import axios from "axios";
+import { useMessage } from "../context/MessageContext";
 
 import { Bar, Line, Pie } from "react-chartjs-2";
 import {
@@ -18,7 +18,6 @@ import {
   Legend,
 } from "chart.js";
 
-// Register chart.js components
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -31,13 +30,10 @@ ChartJS.register(
 );
 
 export default function SystemAnalyticsPageSuperAdmin() {
-
-  const { showSuccess, showError } = useMessage();
+  const { showError } = useMessage();
   const [analytics, setAnalytics] = useState(null);
 
-  // ✅ HARD-CODED FALLBACK DATA (used if API fails or returns empty)
-  const fallback = {
-    // District-wise performance: can be avg score or completion %
+  const fallbackCharts = {
     districtPerformance: [
       { district: "Krishna", score: 78 },
       { district: "Guntur", score: 65 },
@@ -45,23 +41,11 @@ export default function SystemAnalyticsPageSuperAdmin() {
       { district: "Prakasam", score: 52 },
       { district: "Kadapa", score: 91 },
     ],
-
-    // Monthly active users across the state
     monthlyActiveUsers: [1200, 1500, 1800, 2400, 2200, 3100, 4000],
-
-    // Content usage distribution
     contentUsage: {
       videos: 45,
       pdfs: 30,
       quizzes: 25,
-    },
-
-    // Top KPI summary
-    summary: {
-      totalStudents: 34527,
-      totalTeachers: 8760,
-      totalSchools: 1257,
-      avgCompletionRate: 72,
     },
   };
 
@@ -69,32 +53,42 @@ export default function SystemAnalyticsPageSuperAdmin() {
     loadAnalytics();
   }, []);
 
-  // ✅ Load from API, fallback to hardcoded if anything goes wrong
   const loadAnalytics = async () => {
     try {
-      const res = await axios.get("/super-admin/system-analytics");
-
-      if (!res || !res.data) {
-        console.warn("System analytics API empty → using fallback");
-        setAnalytics(fallback);
-        return;
-      }
+      const res = await axios.get(
+        `${import.meta.env.VITE_API_BASE_URL}/analytics/getSuperAdminDashBoardDetails`
+      );
 
       const data = res.data;
 
       const finalData = {
-        districtPerformance:
-          data.districtPerformance ?? fallback.districtPerformance,
-        monthlyActiveUsers:
-          data.monthlyActiveUsers ?? fallback.monthlyActiveUsers,
-        contentUsage: data.contentUsage ?? fallback.contentUsage,
-        summary: data.summary ?? fallback.summary,
+        summary: {
+          totalStudents: data.studentCount ?? 0,
+          totalTeachers: data.teachers ?? 0,
+          totalSchools: data.schools ?? 0,
+        },
+        growth: {
+          students: data.growth?.students ?? 0,
+          teachers: data.growth?.teachers ?? 0,
+          schools: data.growth?.schools ?? 0,
+        },
+        districtPerformance: fallbackCharts.districtPerformance,
+        monthlyActiveUsers: fallbackCharts.monthlyActiveUsers,
+        contentUsage: fallbackCharts.contentUsage,
       };
 
       setAnalytics(finalData);
-    } catch(err) {
-       showError("System analytics API failed → using fallback:", err);
-      setAnalytics(fallback);
+    } catch (err) {
+      showError("System analytics API failed");
+      setAnalytics({
+        summary: {
+          totalStudents: 0,
+          totalTeachers: 0,
+          totalSchools: 0,
+        },
+        growth: { students: 0, teachers: 0, schools: 0 },
+        ...fallbackCharts,
+      });
     }
   };
 
@@ -102,11 +96,7 @@ export default function SystemAnalyticsPageSuperAdmin() {
     return <div style={{ padding: 20 }}>Loading System Analytics...</div>;
   }
 
-  // ==========================
-  //   CHART DATA DEFINITIONS
-  // ==========================
-
-  // BAR CHART – District-wise performance
+  // BAR CHART
   const districtBarData = {
     labels: analytics.districtPerformance.map((d) => d.district),
     datasets: [
@@ -118,7 +108,7 @@ export default function SystemAnalyticsPageSuperAdmin() {
     ],
   };
 
-  // LINE CHART – Monthly active users
+  // LINE CHART
   const monthlyLineData = {
     labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul"],
     datasets: [
@@ -133,7 +123,7 @@ export default function SystemAnalyticsPageSuperAdmin() {
     ],
   };
 
-  // PIE CHART – Content usage
+  // PIE CHART
   const contentPieData = {
     labels: ["Videos", "PDFs", "Quizzes"],
     datasets: [
@@ -158,39 +148,42 @@ export default function SystemAnalyticsPageSuperAdmin() {
         <div className="td-wrapper">
           <h2 className="td-title">System Analytics</h2>
 
-          {/* ===== TOP SUMMARY CARDS ===== */}
+          {/* ===== SUMMARY CARDS ===== */}
           <div className="sa-summary-grid">
             <SummaryCard
               label="Total Students"
               value={analytics.summary.totalStudents}
+              growth={analytics.growth.students}
             />
             <SummaryCard
               label="Total Teachers"
               value={analytics.summary.totalTeachers}
+              growth={analytics.growth.teachers}
             />
             <SummaryCard
               label="Total Schools"
               value={analytics.summary.totalSchools}
+              growth={analytics.growth.schools}
             />
             <SummaryCard
-              label="Avg Completion Rate"
-              value={analytics.summary.avgCompletionRate + "%"}
+              label="Student Growth"
+              value={`${analytics.growth.students}%`}
             />
           </div>
 
-          {/* ===== BAR CHART CARD ===== */}
+          {/* ===== BAR CHART ===== */}
           <div className="td-analytics-card">
             <h3>District-wise Student Performance</h3>
             <Bar data={districtBarData} />
           </div>
 
-          {/* ===== LINE CHART CARD ===== */}
+          {/* ===== LINE CHART ===== */}
           <div className="td-analytics-card">
             <h3>Monthly Active Users</h3>
             <Line data={monthlyLineData} />
           </div>
 
-          {/* ===== PIE CHART CARD ===== */}
+          {/* ===== PIE CHART ===== */}
           <div className="td-analytics-card">
             <h3>Content Usage Breakdown</h3>
             <Pie data={contentPieData} />
@@ -203,15 +196,26 @@ export default function SystemAnalyticsPageSuperAdmin() {
   );
 }
 
-// ==========================
-//   REUSABLE SUMMARY CARD
-// ==========================
+// ===== SUMMARY CARD COMPONENT =====
 
-function SummaryCard({ label, value }) {
+function SummaryCard({ label, value, growth }) {
   return (
     <div className="sa-summary-card">
       <p className="sa-summary-label">{label}</p>
       <p className="sa-summary-value">{value}</p>
+
+      {growth !== undefined && (
+        <p
+          style={{
+            marginTop: "5px",
+            fontSize: "13px",
+            fontWeight: "600",
+            color: growth >= 0 ? "#10B981" : "#EF4444",
+          }}
+        >
+          {growth >= 0 ? "▲" : "▼"} {growth}%
+        </p>
+      )}
     </div>
   );
 }

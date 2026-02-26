@@ -1,84 +1,79 @@
-// src/pages/TeacherNotifications.jsx
 import React, { useEffect, useState } from "react";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 import Footer from "../components/Footer";
-import { http } from "../api/axios";
 import axios from "axios";
-import { useMessage } from "../context/MessageContext"; 
-
+import { useMessage } from "../context/MessageContext";
+import { useSelector } from "react-redux";
 
 export default function TeacherNotifications() {
+
+  const { showSuccess, showError } = useMessage();
+  const loginDetails = useSelector((state) => state.auth.user);
+
   const [items, setItems] = useState([]);
   const [sendTo, setSendTo] = useState("ALL");
-  const [students, setStudents] = useState([]);
+  const [studentsIds, setStudentsIds] = useState([]);
   const [selectedStudent, setSelectedStudent] = useState("");
-  const [loginDetails, setLoginDetails] = useState({});
-  const { showSuccess, showError } = useMessage();
-  
+  const [teacherProfile, setTeacherProfile] = useState(null);
 
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
+   const [notificationDate, setNotificationDate] = useState("");
 
-  // Load students
+  /* ================= LOAD PROFILE ================= */
 
   useEffect(() => {
-    const login = JSON.parse(localStorage.getItem("loginDetails"));
-    if (login) {
-      setLoginDetails(login);
+    if (loginDetails?.userDetails?.loginid) {
+      loadProfile();
     }
-    loadStudents();
-  }, []);
-  const loadStudents = async () => {
+  }, [loginDetails]);
+
+  const loadProfile = async () => {
     try {
-      const res = await axios.get(import.meta.env.VITE_API_BASE_URL+"/api/roles/studentData");
-     
-      setStudents(res.data || []);
-    } catch (e) {
-      setStudents([]);
+      const res = await axios.get(
+        `${import.meta.env.VITE_API_BASE_URL}/login/login/teacher/profile/${loginDetails?.userDetails?.loginid}`
+      );
+
+      setTeacherProfile(res.data || null);
+    } catch {
+      showError("Failed to load teacher profile");
     }
   };
 
-  // useEffect(() => {
-  //   const loadStudents = async () => {
-  //     try {
-  //       const res = await axios.get(import.meta.env.VITE_API_BASE_URL+"/api/students");
-  //       setStudents(res.data || []);
-  //     } catch {
-  //       setStudents([
-  //         { id: "092820", name: "Pankaj", className: "8A", section: "A" },
-  //         { id: "092654", name: "Manoj", className: "8A", section: "A" },
-  //       ]);
-  //     }
-  //   };
-  //   loadStudents();
-  // }, []);
+  /* ================= LOAD STUDENTS BY LOCATION ================= */
 
-  // Load notifications
   useEffect(() => {
-    const loadNotices = async () => {
-      try {
-        const res = await axios.get(import.meta.env.VITE_API_BASE_URL+"/notify/teacher/1");
-        setItems(res.data || []);
-      } catch {
-        setItems([
-          {
-            id: 1,
-            title: "Holiday Announcement",
-            body: "School will be closed on Friday due to festival.",
-            from: "Admin",
+    if (teacherProfile) {
+      getClassLocationDetails();
+    }
+  }, [teacherProfile]);
+
+  const getClassLocationDetails = async () => {
+    try {
+      const res = await axios.get(
+        `${import.meta.env.VITE_API_BASE_URL}/login/login/getStudentsByLocation`,
+        {
+          params: {
+            districtId: teacherProfile.districtId,
+            mandalId: teacherProfile.mandalId,
+            villageId: teacherProfile.villageId,
+            classId: teacherProfile.classId,
           },
-          {
-            id: 2,
-            title: "Exam Notice",
-            body: "Maths exam scheduled for 05/12/2025.",
-            from: "Admin",
-          },
-        ]);
-      }
-    };
-    loadNotices();
-  }, []);
+        }
+      );
+
+      setStudentsIds([
+        { studentid: "ALL", student_Name: "All Students" },
+        ...(res.data?.students || []),   // ✅ FIXED HERE
+      ]);
+
+    } catch {
+      setStudentsIds([]);
+    }
+  };
+
+  /* ================= SEND NOTIFICATION ================= */
 
   const sendNotification = async (e) => {
     e.preventDefault();
@@ -87,18 +82,26 @@ export default function TeacherNotifications() {
       showError("Please fill all fields");
       return;
     }
+    const selectedStudentObj = studentsIds.find(
+      (s) => String(s.studentid) === String(selectedStudent)
+    );
 
     const payload = {
       sendTo,
       studentId: sendTo === "SPECIFIC" ? selectedStudent : null,
+      studentName: sendTo === "SPECIFIC" ? selectedStudentObj?.student_Name : null,
       title,
       body,
-      loginId:loginDetails.loginId
+      date: notificationDate,   
+      teacherLoginId: loginDetails?.userDetails?.loginid,
+      teacherName: loginDetails?.userDetails?.fullName,
     };
+
     try {
-       //const res = await http.post("/notify/send/notification", payload);
-      const res = await axios.post(import.meta.env.VITE_API_BASE_URL+"/api/notifications/sendNotifications",payload)
-     // const res = await http.post("/api/notifications/sendNotifications", payload);
+      const res = await axios.post(
+        import.meta.env.VITE_API_BASE_URL + "/notify/api/notifications/sendStudentNotifications",
+        payload
+      );
 
       setItems((prev) => [...prev, res.data || payload]);
       showSuccess("Notification Sent!");
@@ -110,6 +113,7 @@ export default function TeacherNotifications() {
 
     setTitle("");
     setBody("");
+    setSelectedStudent("");
   };
 
   return (
@@ -123,14 +127,11 @@ export default function TeacherNotifications() {
 
           <h2 className="teacher-page-title">Notifications</h2>
 
-          {/* SEND NEW NOTIFICATION */}
           <div className="teacher-card">
-
             <h3 className="teacher-card-title">Send New Notification</h3>
 
             <form className="notify-form" onSubmit={sendNotification}>
-              
-              {/* Send To */}
+
               <label className="notify-label">Send To</label>
               <select
                 className="notify-select"
@@ -141,7 +142,6 @@ export default function TeacherNotifications() {
                 <option value="SPECIFIC">Specific Student</option>
               </select>
 
-              {/* Select Student */}
               {sendTo === "SPECIFIC" && (
                 <>
                   <label className="notify-label">Select Student</label>
@@ -151,17 +151,24 @@ export default function TeacherNotifications() {
                     onChange={(e) => setSelectedStudent(e.target.value)}
                   >
                     <option value="">Select Student</option>
-                    {students.map((s) => (
-                      <option key={s.loginid} value={s.loginid}>
-                        {/* {s.name} — {s.className} / {s.section} */}
-                        {s.loginid}-{s.fullName}
+
+                    {studentsIds.map((s) => (
+                      <option key={s.studentid} value={s.studentid}>
+                        {s.studentid} - {s.student_Name}  {/* ✅ FIXED */}
                       </option>
                     ))}
                   </select>
                 </>
               )}
 
-              {/* Title */}
+              <label className="notify-label">Select Date</label>
+              <input
+                type="date"
+                className="notify-input"
+                value={notificationDate}
+                onChange={(e) => setNotificationDate(e.target.value)}
+              />
+
               <label className="notify-label">Title</label>
               <input
                 className="notify-input"
@@ -169,7 +176,6 @@ export default function TeacherNotifications() {
                 onChange={(e) => setTitle(e.target.value)}
               />
 
-              {/* Message */}
               <label className="notify-label">Message</label>
               <textarea
                 className="notify-textarea"
@@ -180,19 +186,21 @@ export default function TeacherNotifications() {
               <button className="notify-btn" type="submit">
                 Send Notification
               </button>
+
             </form>
           </div>
 
-          {/* RECENT NOTIFICATIONS */}
           <div className="teacher-card">
             <h3 className="notify-title">Recent Notifications</h3>
 
             <ul className="notify-list">
               {items.map((n) => (
-                <li className="notify-item" key={n.id}>
+                <li className="notify-item" key={n.id || Math.random()}>
                   <strong>{n.title}</strong>
                   <span>{n.body}</span>
-                  <span className="notify-meta">From: {n.from || "Teacher"}</span>
+                  <span className="notify-meta">
+                    From: {n.from || "Teacher"}
+                  </span>
                 </li>
               ))}
             </ul>

@@ -17,7 +17,7 @@ import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 
 import { useMessage } from "../context/MessageContext";
-import LoginActivity from "../components/LoginActivity";
+
 export default function Dashboard() {
  const { showSuccess, showError } = useMessage();
   
@@ -38,7 +38,7 @@ const login=useSelector((state)=>state.auth.user);
       
      // Load all class schedules
   }, []);
-   LoginActivity();
+   
 
 
   const calendarRef = React.createRef();

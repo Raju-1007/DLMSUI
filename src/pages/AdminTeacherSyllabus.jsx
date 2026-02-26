@@ -15,6 +15,9 @@ export default function AdminTeacherSyllabus() {
 
   const [showPopup, setShowPopup] = useState(false);
   const [editing, setEditing] = useState(false);
+  const [page, setPage] = useState(0);
+        const [size] = useState(5);
+        const[totalPages,setTotalPages]=useState("");
 
   const [form, setForm] = useState({
     timingId: "",
@@ -28,15 +31,23 @@ export default function AdminTeacherSyllabus() {
   /* ---------------- LOAD ACADEMIC TIMETABLE ---------------- */
   useEffect(() => {
     loadTimeTable();
-  }, []);
+  }, [page,size]);
 
   const loadTimeTable = async () => {
     setLoading(true);
     try {
       const res = await axios.get(
-        `${import.meta.env.VITE_API_BASE_URL}/content/teachertimeTableDetails`
+        `${import.meta.env.VITE_API_BASE_URL}/content/teachertimeTableDetails`,{
+          params:
+          {
+            page:page,
+            size:size
+          }
+        }
       );
-      setItems(res.data || []);
+      setItems(res.data.content || []);
+       setTotalPages(res.data.totalPages || 0);
+
     } catch (error) {
       showError("Error loading academic timetable");
     }
@@ -169,10 +180,33 @@ export default function AdminTeacherSyllabus() {
                       </tr>
                     ))}
                 </tbody>
+                
 
               </table>
+              
             )}
+           
           </div>
+           <div className="admin-pagination">
+              <button
+                disabled={page === 0}
+                onClick={() => setPage(page - 1)}
+              >
+                Previous
+              </button>
+
+              <span>
+                Page {page + 1} of {totalPages}
+              </span>
+
+              <button
+                disabled={page + 1 >= totalPages}
+                onClick={() => setPage(page + 1)}
+              >
+                Next
+              </button>
+            </div>
+
         </div>
       </div>
 

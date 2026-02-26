@@ -5,58 +5,55 @@ import Sidebar from "../components/Sidebar";
 import { FaSearch } from "react-icons/fa";
 import { useSelector } from "react-redux";
 import Footer from "../components/Footer";
-import { useMessage } from "../context/MessageContext"; 
-
+import { useMessage } from "../context/MessageContext";
 
 export default function StudentAttendance() {
-  const { showSuccess, showError } = useMessage();
+
+  const { showError } = useMessage();
+  const loginDetails = useSelector((state) => state.auth.user);
+
   const [attendance, setattendance] = useState([]);
-   const loginDetails = useSelector((state) => state.auth.user);
   const [search, setSearch] = useState("");
-  const[loginStuDeatils,setLoginStuDetails]=useState("");
+  const [loginStuDeatils, setLoginStuDetails] = useState({});
   const [date, setDate] = useState(
-      new Date().toISOString().slice(0, 10)
+    new Date().toISOString().slice(0, 10)
+  );
+
+  /* ================= LOAD DATA ================= */
+
+  useEffect(() => {
+    const loginstuDetails = JSON.parse(
+      localStorage.getItem("studentsInformation")
     );
 
-  // Hardcoded fallback
-  
-  useEffect(() => {
-    let loginstuDetails=JSON.parse(localStorage.getItem('studentsInformation'));
-     setLoginStuDetails(loginstuDetails);
-    loadAssignments();
+    setLoginStuDetails(loginstuDetails || {});
+    fetchAttendance();
   }, [date]);
 
-  const loadAssignments = async () => {
-
-    console.log(loginDetails.loginId);
-    
+  const fetchAttendance = async () => {
     try {
-       const res = await axios.get(import.meta.env.VITE_API_BASE_URL+"/api/attendances/attendance/getStudentLoginId",
-  {
-    params: {
-      date: date,
-      studentId: loginDetails.loginId   // 👈 MUST BE SENT
-    }
-  }
-);
-console.log(res,"===========================>===========================")
+      const res = await axios.get(
+        `${import.meta.env.VITE_API_BASE_URL}/analytics/api/grades/getAtendanceDetails`,
+        {
+          params: {
+            studentId: loginDetails?.userDetails?.loginid,
+          },
+        }
+      );
 
-    
-      if (res.data && res.data.length > 0) {
-        setattendance(res.data);
-      } else {
-           setattendance([]);
-      }
-    } catch(err) {
-       showError("API failed → Loading fallback", err);
-
+      setattendance(res.data || []);
+    } catch (error) {
+      showError("Error fetching attendance");
     }
   };
 
-  // const filtered = assignments.filter((a) =>
-  //   a.subject?.toLowerCase().includes(search.toLowerCase())
-  // );
-  //  console.log(filtered,"filtered================================>");
+  /* ================= SEARCH FILTER ================= */
+
+  const filteredAttendance = attendance.filter((item) =>
+    item.subjectName?.toLowerCase().includes(search.toLowerCase())
+  );
+
+  /* ================= UI ================= */
 
   return (
     <div>
@@ -69,25 +66,23 @@ console.log(res,"===========================>===========================")
           <h2 className="assign-title">Attendance</h2>
 
           <div className="assign-table-card">
-             <div  className>
-                <label className="ta-label">Date</label>
-                <input
-                  type="date"
-                  className="ta-date-inputt"
-                  value={date}
-                  onChange={(e) => setDate(e.target.value)}
 
-                />
-              </div>
+            {/* Date Filter */}
+            {/* <div>
+              <label className="ta-label">Date</label>
+              <input
+                type="date"
+                className="ta-date-inputt"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+              />
+            </div> */}
 
             {/* Header Row */}
             <div className="assign-top-row">
-              <h3 className="student-name">{loginStuDeatils.fullName}-{loginStuDeatils.loginid}</h3>
-                <div className="ta-header">
-
-             
-
-            </div>
+              <h3 className="student-name">
+                {loginStuDeatils?.fullName} - {loginStuDeatils?.loginid}
+              </h3>
 
               <div className="search-box">
                 <FaSearch className="search-icon" />
@@ -100,58 +95,58 @@ console.log(res,"===========================>===========================")
               </div>
             </div>
 
-            {/* Table */}
+            {/* Attendance Table */}
             <table className="assign-table">
               <thead>
                 <tr>
                   <th>S_ID</th>
                   <th>S_NAME</th>
                   <th>SUBJECT</th>
-                  <th>CLASS</th>
-                  <th>SECTION</th>
-                  <th>MARK</th>
-                  {/* <th>GRADE</th> */}
-                  {/* <th>REPORTS</th> */}
-                 
                   <th>DATE</th>
                   <th>STATUS</th>
                 </tr>
               </thead>
 
               <tbody>
-                {attendance.map((a, i) => (
-                  <tr key={i}>
-                    <td>{a.studentId}</td>
-                    <td>{a.name}</td>
-                    <td>{a.subject}</td>
+                {filteredAttendance.length > 0 ? (
+                  filteredAttendance.map((a, i) => (
+                    <tr key={i}>
+                      <td>{a.studentId}</td>
+                      <td>{a.studentName}</td>
+                      <td>{a.subjectName}</td>
 
-                    <td>{a.className}</td>
-                    <td>{a.section}</td>
-                    <td>{a.mark}</td>
-                    <td>{a.date}</td>
                     
 
-                
+                      <td>{a.date}</td>
 
-                    <td>
-                      {a.status === "Late" && (
-                        <span className="badge completed">late</span>
-                      )}
-                      {a.status === "Upcoming" && (
-                        <span className="badge upcoming">Upcoming</span>
-                      )}
-                      {a.status === "In-progress" && (
-                        <span className="badge progress">In-progress</span>
-                      )}
+                      <td>
+                        {a.attendance === "Active" ? (
+                          <span className="badge completed">
+                            Active
+                          </span>
+                        ) : (
+                          <span className="badge progress">
+                            {a.attendance}
+                          </span>
+                        )}
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="8" style={{ textAlign: "center" }}>
+                      No attendance records found
                     </td>
                   </tr>
-                ))}
+                )}
               </tbody>
+
             </table>
 
           </div>
         </div>
       </div>
+
       <Footer />
     </div>
   );

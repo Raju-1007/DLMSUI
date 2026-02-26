@@ -14,6 +14,9 @@ export default function AdminTeachers() {
   const [search, setSearch] = useState("");
   const [showPopup, setShowPopup] = useState(false);
   const nav = useNavigate();
+  const [page, setPage] = useState(0);
+      const [size] = useState(5);
+      const[totalPages,setTotalPages]=useState("");
   const [form, setForm] = useState({
     teacherId: "",
     name: "",
@@ -31,12 +34,23 @@ export default function AdminTeachers() {
   });
 
   /* ================= LOAD TEACHERS ================= */
-  useEffect(() => {
-    axios
-      .get(import.meta.env.VITE_API_BASE_URL + "/content/teacherProfiles")
-      .then((res) => setTeachers(res.data || []))
-      .catch(() => setTeachers([]));
-  }, []);
+ useEffect(() => {
+  axios
+    .get(`${import.meta.env.VITE_API_BASE_URL}/content/teacherProfiles`, {
+      params: {
+        page: page,
+        size: size,
+      },
+    })
+    .then((res) => {
+      setTeachers(res.data.content || []);
+      setTotalPages(res.data.totalPages || 0);
+    })
+    .catch(() => {
+      setTeachers([]);
+      setTotalPages(0);
+    });
+}, [page, size]);   // 🔥 IMPORTANT
 
   /* ================= OPEN POPUP ================= */
   const openPopup = (t) => {
@@ -146,7 +160,7 @@ export default function AdminTeachers() {
     address:form.address
   };
 
-console.log(payload,"====================payload==============>")
+
   try {
     await axios.post(
       "http://localhost:8080/content/assignTeacher",
@@ -169,7 +183,7 @@ console.log(payload,"====================payload==============>")
 };
 
 const handileClick=(t)=>{
-    console.log(t,"::::::::::::Function Called::::::::::::::::::::::::");
+    
     nav("/calnderview",{
       state:{data:t}
     })
@@ -202,7 +216,7 @@ const handileClick=(t)=>{
                 <th>SchoolType</th>
                 <th>classNames</th>
                 <th>Rating</th>
-                <th>Sechudule Timings</th>
+                {/* <th>Sechudule Timings</th> */}
               </tr>
             </thead>
             <tbody>
@@ -217,13 +231,34 @@ const handileClick=(t)=>{
                   <td>{t.schoolType}</td>
                   <td>{t.classNames}</td>
                   <td>{"★".repeat(t.rating || 5)}</td>
-                  <td><button onClick={()=>handileClick(t)}>sechudle class</button></td>
+                  {/* <td><button onClick={()=>handileClick(t)}>sechudle class</button></td> */}
 
                 </tr>
               ))}
             </tbody>
           </table>
+
+          <div className="admin-pagination">
+              <button
+                disabled={page === 0}
+                onClick={() => setPage(page - 1)}
+              >
+                Previous
+              </button>
+
+              <span>
+                Page {page + 1} of {totalPages}
+              </span>
+
+              <button
+                disabled={page + 1 >= totalPages}
+                onClick={() => setPage(page + 1)}
+              >
+                Next
+              </button>
+            </div>
         </div>
+        
       </div>
 
       {/* ================= POPUP ================= */}
@@ -286,7 +321,9 @@ const handileClick=(t)=>{
                 Cancel
               </button>
             </div>
+            
           </div>
+           
         </div>
       )}
 

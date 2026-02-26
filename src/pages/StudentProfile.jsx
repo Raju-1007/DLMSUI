@@ -1,314 +1,307 @@
 // src/pages/StudentProfile.jsx
+
 import React, { useEffect, useState } from "react";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 import Footer from "../components/Footer";
-import { useMessage } from "../context/MessageContext";
 import axios from "axios";
+import { useSelector } from "react-redux";
 
 export default function StudentProfile() {
 
-  /* ===================== STATE ===================== */
-  const [students, setStudents] = useState([]);
-  const [month, setMonth] = useState("");
+  const login = useSelector((state)=>state.auth.user);
+  const studentId = login?.userDetails?.loginid;
 
-  const { showSuccess, showError } = useMessage();
+  const [attendanceData,setAttendanceData] = useState([]);
+  const [gradeData,setGradeData] = useState([]);
+  const [profileImage,setProfileImage] = useState(null);
+  const [showModal,setShowModal] = useState(false);
+  const [loading,setLoading] = useState(true);
 
-  /* ===================== LOCAL STORAGE ===================== */
-  const login = JSON.parse(localStorage.getItem("studentsInformation"));
-  const courseDetails = JSON.parse(localStorage.getItem("CourseData")) || [];
-  const progress = JSON.parse(localStorage.getItem("progress")) || 0;
+  /* ================= LOAD DATA ================= */
 
-  /* ===================== STATUS LOGIC ===================== */
-  let status = "Need to do Improve";
-  if (progress >= 50 && progress < 75) status = "Good";
-  if (progress >= 75) status = "Very Good";
+  useEffect(()=>{
+    if(studentId){
+      loadData();
+      loadProfileImage();
+    }
+  },[studentId]);
 
-  /* ===================== FILTER COURSES ===================== */
-  const filterCourseDetails = courseDetails.filter(
-    (prev) => prev.studentId == login.loginid
-  );
-
-  /* ===================== API CALL ===================== */
-  useEffect(() => {
-    loadAttendance();
-  }, []);
-
-  const loadAttendance = async () => {
-    try {
-      const res = await axios.get(
-        import.meta.env.VITE_API_BASE_URL + "/api/attendances/getattendance"
+  const loadData = async ()=>{
+    try{
+      const attendanceRes = await axios.get(
+        import.meta.env.VITE_API_BASE_URL +
+        "/analytics/api/grades/getAtendanceDetails",
+        { params:{ studentId } }
       );
-      setStudents(res.data || []);
-    } catch (error) {
-      setStudents([]);
+
+      const gradeRes = await axios.get(
+        import.meta.env.VITE_API_BASE_URL +
+        "/analytics/api/grades/getScoreDetails",
+        { params:{ studentId } }
+      );
+
+      setAttendanceData(attendanceRes.data || []);
+      setGradeData(gradeRes.data || []);
+    }catch{
+      setAttendanceData([]);
+      setGradeData([]);
+    }finally{
+      setLoading(false);
     }
   };
 
-  /* ===================== FILTER STUDENT ATTENDANCE ===================== */
-  const studentAttendance = students.filter(
-    (a) => a.studentId == login.loginid
-  );
+  /* ================= PROFILE IMAGE ================= */
 
-  /* ===================== ATTENDANCE CALCULATION ===================== */
-  const getMonthName = (date) =>
-    new Date(date).toLocaleString("default", { month: "long" });
+  const loadProfileImage = async ()=>{
+    try{
+      const res = await axios.get(
+        import.meta.env.VITE_API_BASE_URL +
+        "/login/getProfileImage",
+        { params:{ studentId } }
+      );
 
-  const calculateAttendanceByMonth = (data) => {
-    const monthMap = {};
-
-    data.forEach((item) => {
-      const month = getMonthName(item.date);
-
-      if (!monthMap[month]) {
-        monthMap[month] = {
-          present: 0,
-          absent: 0,
-          late: 0,
-          total: 0,
-        };
+      if(res.data){
+        setProfileImage("data:image/jpeg;base64,"+res.data);
       }
-
-      monthMap[month].total += 1;
-
-      if (item.status === "PRESENT") monthMap[month].present += 1;
-      if (item.status === "ABSENT") monthMap[month].absent += 1;
-      if (item.status === "LATE") monthMap[month].late += 1;
-    });
-
-    const percentageData = {};
-    Object.keys(monthMap).forEach((m) => {
-      const { present, total } = monthMap[m];
-      percentageData[m] =
-        total > 0 ? Math.round((present / total) * 100) : 0;
-    });
-
-    return percentageData;
+    }catch{
+      setProfileImage(null);
+    }
   };
 
-  const attendance = calculateAttendanceByMonth(studentAttendance);
+  const handleUpload = async(e)=>{
+    const file = e.target.files[0];
+    if(!file) return;
 
-  /* Set default month once attendance loads */
-  useEffect(() => {
-    const months = Object.keys(attendance);
-    if (months.length > 0) setMonth(months[0]);
-  }, [students]);
+    const formData = new FormData();
+    formData.append("studentId",studentId);
+    formData.append("file",file);
 
-  /* ===================== JSX ===================== */
+    await axios.post(
+      import.meta.env.VITE_API_BASE_URL +
+      "/login/uploadProfileImage",
+      formData
+    );
+
+    loadProfileImage();
+    setShowModal(false);
+  };
+
+  const handleRemove = async()=>{
+    await axios.delete(
+      import.meta.env.VITE_API_BASE_URL +
+      "/login/removeProfileImage",
+      { params:{ studentId } }
+    );
+    setProfileImage(null);
+    setShowModal(false);
+  };
+
+  /* ================= CALCULATIONS ================= */
+
+  const presentCount = attendanceData.filter(
+    (a)=>a.attendance === "Active"
+  ).length;
+
+  const attendancePercent =
+    attendanceData.length > 0
+      ? Math.round((presentCount/attendanceData.length)*100)
+      : 0;
+
+  const overallPerformance =
+    gradeData.length > 0
+      ? Math.round(
+          gradeData.reduce((acc,g)=>acc+g.percentage,0) /
+          gradeData.length
+        )
+      : 0;
+
+  const performanceStatus =
+    overallPerformance >= 75
+      ? "Excellent"
+      : overallPerformance >= 50
+      ? "Good"
+      : "Needs Improvement";
+
   return (
     <div>
-      <Navbar />
+      <Navbar/>
 
-      <div className="sp-layout">
-        <Sidebar />
+      <div className="profile-layout">
+        <Sidebar/>
 
-        <div className="sp-main">
+        <div className="profile-main">
 
-          {/* ================= STUDENT PROFILE ================= */}
-          <div className="sp-card">
-            <div className="sp-profile">
-              <div>
-                <h3>Student Profile Card</h3>
-                <p><b>Name:</b> {login.fullName}</p>
-                <p><b>Student Id:</b> {login.loginid}</p>
-                <p><b>Class:</b> {courseDetails[0]?.className}</p>
-                <p><b>Email:</b> {login.email}</p>
-              </div>
+          {/* PROFILE CARD */}
+          <div className="profile-card profile-top">
 
-              <div className="sp-rating">
-                <div className="sp-image">Image</div>
-                <p>Avg Rating</p>
-                <span>4.5 ⭐</span>
-              </div>
-            </div>
-          </div>
-
-          {/* ================= ACADEMIC PERFORMANCE ================= */}
-          <div className="sp-card">
-            <h4>Academic Performance – Test Scores (3-Month Trend)</h4>
-
-            <table className="sp-table">
-              <thead>
-                <tr>
-                  <th>Subject</th>
-                  <th>Average</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filterCourseDetails.length > 0 ? (
-                  filterCourseDetails.map((item, index) => (
-                    <tr key={index}>
-                      <td>{item.title}</td>
-                      <td>{progress}%</td>
-                      <td className="blue">{status}</td>
-                    </tr>
-                  ))
+            <div className="profile-left">
+              <div
+                className="profile-avatar"
+                onClick={()=>setShowModal(true)}
+              >
+                {profileImage ? (
+                  <img src={profileImage} alt="profile"/>
                 ) : (
-                  <tr>
-                    <td colSpan="3" style={{ textAlign: "center" }}>
-                      No Subjects Found
-                    </td>
-                  </tr>
+                  login?.userDetails?.fullName?.charAt(0)
                 )}
-              </tbody>
-            </table>
-          </div>
-
-          {/* ================= ATTENDANCE SUMMARY ================= */}
-          <div className="sp-card">
-            <h4>Attendance Summary (Past 3 Months)</h4>
-
-            <div className="att-layout">
-
-              {/* LEFT BIG CIRCLE */}
-              <div className="att-left">
-                <div className="att-circle">
-                  <svg viewBox="0 0 36 36">
-                    <path
-                      className="bg"
-                      d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                    />
-                    <path
-                      className="progress"
-                      strokeDasharray={`${attendance[month] || 0},100`}
-                      d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                    />
-                    <text x="18" y="20.5">
-                      {attendance[month] || 0}%
-                    </text>
-                  </svg>
-                  <p>Attendance</p>
-                </div>
-
-                <div className="att-stats">
-                  <p><span className="dot green"></span> Present</p>
-                  <p><span className="dot red"></span> Absent</p>
-                  <p><span className="dot yellow"></span> Late</p>
-                </div>
               </div>
 
-              {/* RIGHT MONTHS */}
-              <div className="att-months">
-                {Object.keys(attendance).map((m) => (
-                  <div
-                    key={m}
-                    className={`month-box ${month === m ? "active" : ""}`}
-                    onClick={() => setMonth(m)}
-                  >
-                    <div className="mini-circle">
-                      <svg viewBox="0 0 36 36">
-                        <path
-                          className="bg"
-                          d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                        />
-                        <path
-                          className="progress"
-                          strokeDasharray={`${attendance[m]},100`}
-                          d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                        />
-                      </svg>
-                      <span>{attendance[m]}%</span>
-                    </div>
-                    <p>{m}</p>
-                  </div>
-                ))}
+              <div>
+                <h2>{login?.userDetails?.fullName}</h2>
+                <p><b>Student ID:</b> {studentId}</p>
+                <p><b>Email:</b> {login?.userDetails?.email}</p>
               </div>
             </div>
+
+            <div className="profile-stats">
+              <div className="stat-box">
+                <h4>Attendance</h4>
+                <h2>{attendancePercent}%</h2>
+              </div>
+
+              <div className="stat-box">
+                <h4>Performance</h4>
+                <h2>{overallPerformance}%</h2>
+                <span>{performanceStatus}</span>
+              </div>
+            </div>
+
           </div>
 
-          {/* ================= BACKLOGS ================= */}
-          <div className="sp-card">
-            <h4>Backlogs / Pending Work</h4>
-            <table className="sp-table">
-              <thead>
-                <tr>
-                  <th>Assignment</th>
-                  <th>Subject</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>Homework 2</td>
-                  <td>Maths</td>
-                  <td className="red">Pending</td>
-                </tr>
-                <tr>
-                  <td>Lab Record</td>
-                  <td>Science</td>
-                  <td className="green">Submitted</td>
-                </tr>
-              </tbody>
-            </table>
+          {/* GRADE DETAILS */}
+          <div className="profile-card">
+            <h3>Grade Details</h3>
+
+            {loading ? (
+              <p>Loading...</p>
+            ) : (
+              <table className="profile-table">
+                <thead>
+                  <tr>
+                    <th>Assessment</th>
+                    <th>Score</th>
+                    <th>Total</th>
+                    <th>Percentage</th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {gradeData.length === 0 ? (
+                    <tr>
+                      <td colSpan="4" align="center">
+                        No Grade Records
+                      </td>
+                    </tr>
+                  ) : (
+                    gradeData.map((g,index)=>(
+                      <tr key={index}>
+                        <td>{g.assessmentName}</td>
+                        <td>{g.score}</td>
+                        <td>{g.total}</td>
+                        <td>{g.percentage}%</td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            )}
           </div>
 
-          {/* ================= BEHAVIOR ================= */}
-          <div className="sp-card">
-            <h4>Behavior / Class Participation</h4>
-            <ul className="sp-list">
-              <li>✔ Actively participates in discussions</li>
-              <li>✔ Good teamwork skills</li>
-              <li>⚠ Needs improvement in punctuality</li>
-            </ul>
-          </div>
+          {/* ATTENDANCE */}
+          <div className="profile-card">
+            <h3>Attendance Report</h3>
 
-          {/* ================= EXTRACURRICULAR ================= */}
-          <div className="sp-card">
-            <h4>Extracurricular & Activity Log</h4>
-            <table className="sp-table">
-              <thead>
-                <tr>
-                  <th>Activity</th>
-                  <th>Level</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>Sports Meet</td>
-                  <td>District</td>
-                  <td>Participated</td>
-                </tr>
-                <tr>
-                  <td>Science Fair</td>
-                  <td>School</td>
-                  <td>Winner</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
+            {loading ? (
+              <p>Loading...</p>
+            ) : (
+              <table className="profile-table">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Status</th>
+                    <th>Subject</th>
+                  </tr>
+                </thead>
 
-          {/* ================= PARENT COMMUNICATION ================= */}
-          <div className="sp-card">
-            <h4>Parent Communication Section</h4>
-            <table className="sp-table">
-              <thead>
-                <tr>
-                  <th>Date</th>
-                  <th>Mode</th>
-                  <th>Summary</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>12 Nov</td>
-                  <td>Call</td>
-                  <td>Discussed academic progress</td>
-                </tr>
-                <tr>
-                  <td>18 Nov</td>
-                  <td>Email</td>
-                  <td>Attendance improvement plan</td>
-                </tr>
-              </tbody>
-            </table>
+                <tbody>
+                  {attendanceData.length === 0 ? (
+                    <tr>
+                      <td colSpan="3" align="center">
+                        No Attendance Records
+                      </td>
+                    </tr>
+                  ) : (
+                    attendanceData.map((a,index)=>(
+                      <tr key={index}>
+                        <td>{a.date || "-"}</td>
+                        <td className={
+                          a.attendance === "Active"
+                            ? "green"
+                            : "red"
+                        }>
+                          {a.attendance}
+                        </td>
+                        <td>{a.subjectName}</td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            )}
           </div>
 
         </div>
       </div>
 
-      <Footer />
+      <Footer/>
+
+      {/* IMAGE MODAL */}
+      {showModal && (
+        <div className="image-modal">
+          <div className="image-modal-content">
+            <h3>Change Profile Picture</h3>
+
+            <div className="modal-avatar">
+              {profileImage ? (
+                <img src={profileImage}/>
+              ) : (
+                login?.userDetails?.fullName?.charAt(0)
+              )}
+            </div>
+
+            <div className="modal-buttons">
+
+              <label className="btn primary">
+                Upload
+                <input
+                  type="file"
+                  hidden
+                  onChange={handleUpload}
+                />
+              </label>
+
+              {profileImage && (
+                <button
+                  className="btn danger"
+                  onClick={handleRemove}
+                >
+                  Remove
+                </button>
+              )}
+
+              <button
+                className="btn light"
+                onClick={()=>setShowModal(false)}
+              >
+                Close
+              </button>
+
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

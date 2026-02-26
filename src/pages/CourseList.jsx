@@ -37,42 +37,41 @@ export default function CourseList() {
 
   const fetchCourses = async () => {
     try {
-      const res = await axios.get(import.meta.env.VITE_API_BASE_URL+"/api/courses/getCourses");
-      localStorage.setItem("CourseData",JSON.stringify(res.data));
+      const res = await axios.get(import.meta.env.VITE_API_BASE_URL+"/content/getCourses");
       setCourses(res.data);
     } catch (error) {
      showError("Error fetching courses:", error);
     }
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!courseName.trim()) return showSuccess("Enter course name");
-    const payload={
-         studentId:loginId,
-        title: courseName,
-        className:className,
-        sectionName:sectionName
-    }
-    console.log(payload);
+  // const handleSubmit = async (e) => {
+  //   e.preventDefault();
+  //   if (!courseName.trim()) return showSuccess("Enter course name");
+  //   const payload={
+  //        studentId:loginId,
+  //       title: courseName,
+  //       className:className,
+  //       sectionName:sectionName
+  //   }
+  //   console.log(payload);
 
-    try {
-      await axios.post(import.meta.env.VITE_API_BASE_URL+"/api/courses/addCourses", payload);
+  //   try {
+  //     await axios.post(import.meta.env.VITE_API_BASE_URL+"/api/courses/addCourses", payload);
 
-      setCourseName("");
-      setShowDialog(false);
-      fetchCourses();
+  //     setCourseName("");
+  //     setShowDialog(false);
+  //     fetchCourses();
 
-    } catch (e) {
-      console.error(e);
-    }
-  };
+  //   } catch (e) {
+  //     console.error(e);
+  //   }
+  // };
   // const navigateChapterview=()=>{
   //    navigate('/chapterviews')
   // }
 
-  const navigateChapterview = (id, title) => {
-  navigate(`/chapterviews/${id}/${encodeURIComponent(title)}`);
+  const navigateChapterview = (subjectId, subjectName) => {
+  navigate(`/chapterviews/${subjectId}/${encodeURIComponent(subjectName)}`);
 };
 
   // ⭐ Get progress bar color
@@ -110,9 +109,9 @@ export default function CourseList() {
               const color = getColor(percentage);
 
               return (
-                <div className="course-card" key={c.id}>
+                <div className="course-card" key={c.subjectId}>
 
-                  <h3 className="course-name">{c.title}</h3>
+                  <h3 className="course-name">{c.subjectName}</h3>
 
                   <div className="progress-wrapper">
                     <CircularProgressbar
@@ -131,7 +130,7 @@ export default function CourseList() {
                   {/* <button className="details-btn" onClick={navigateChapterview}>View Details</button> */}
                   <button
                     className="details-btn"
-                    onClick={() => navigateChapterview(c.id, c.title)}
+                    onClick={() => navigateChapterview(c.subjectId, c.subjectName)}
                   >
                     View Details
                   </button>

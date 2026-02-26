@@ -5,14 +5,18 @@ import Footer from "../components/Footer";
 import axios from "axios";
 import { useMessage } from "../context/MessageContext";
 import { useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
 
 export default function ReceiveNotifications() {
 
   const { showError } = useMessage();
   const login = useSelector((state) => state.auth.user);
+  const navigator = useNavigate();
 
   const [notifications, setNotifications] = useState([]);
+  const [teacherSpecific, setTeacherSpecific] = useState([]);
   const [teacherTimeTable, setTeacherTimeTable] = useState([]);
+  const[data,setData]=useState("");
   const [teacherMeta, setTeacherMeta] = useState({
     className: "",
     subjectName: ""
@@ -20,67 +24,73 @@ export default function ReceiveNotifications() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchNotifications();
+    getNotifications();
     fetchTeacherTimeTable();
   }, []);
 
-  /* ------------------ FETCH TEACHER TIMETABLE ------------------ */
+  /* ------------------ TIMETABLE ------------------ */
   const fetchTeacherTimeTable = async () => {
     try {
-      // 1️⃣ Teacher profile
       const teacherRes = await axios.get(
         `${import.meta.env.VITE_API_BASE_URL}/login/login/teacher/profile/${login?.userDetails?.loginid}`
       );
 
-      const profile = teacherRes.data?.[0]; 
-      // ["Class 2",2,"EVS",4]
+      const profile = teacherRes.data;
+      setData(profile);
+      if (!profile) return;
 
-      if (!profile) {
-        showError("Teacher profile not found");
-        return;
-      }
-
-      const className = profile[0];
-      const classId = profile[1];
-      const subjectName = profile[2];
-      const subjectId = profile[3];
-
-      // store names for UI
       setTeacherMeta({
-        className,
-        subjectName
+        className: profile.className,
+        subjectName: profile.subjectName
       });
 
-      // 2️⃣ Full timetable
       const timetableRes = await axios.get(
         `${import.meta.env.VITE_API_BASE_URL}/content/teachertimeTableDetails`
       );
 
-      // 3️⃣ Filter by classId + subjectId
       const filtered = timetableRes.data.filter(
-        (t) => t.classId === classId && t.subjectId === subjectId
+        (t) =>
+          t.classId === profile.classId &&
+          t.subjectId === profile.subjectId
       );
 
       setTeacherTimeTable(filtered);
 
-    } catch (error) {
+    } catch {
       showError("Error loading timetable");
     } finally {
       setLoading(false);
     }
   };
 
-  /* ------------------ FETCH NOTIFICATIONS ------------------ */
-  const fetchNotifications = async () => {
+  /* ------------------ NOTIFICATIONS ------------------ */
+  const getNotifications = async () => {
     try {
-      const res = await axios.get(
-        `${import.meta.env.VITE_API_BASE_URL}/api/admin/notifications`
+      const general = await axios.get(
+        `${import.meta.env.VITE_API_BASE_URL}/notify/api/notifications/getALLNotifications`,
+        { params: { sendTo: "TEACHER" } }
       );
-      setNotifications(res.data || []);
-    } catch (error) {
-      showError("Error loading notifications");
+
+      const specific = await axios.get(
+        `${import.meta.env.VITE_API_BASE_URL}/notify/api/notifications/getALLNotifications`,
+        {
+          params: {
+            sendTo: "TEACHERID",
+            teacherId: login?.userDetails?.loginid
+          }
+        }
+      );
+
+      setNotifications(general.data || []);
+      setTeacherSpecific(specific.data || []);
+
+    } catch (err) {
+      console.error(err);
     }
   };
+
+  /* Merge Both */
+  const mergedNotifications = [...notifications, ...teacherSpecific];
 
   /* ------------------ UI ------------------ */
   return (
@@ -92,15 +102,13 @@ export default function ReceiveNotifications() {
 
         <div className="rn-content">
 
+          {/* Timetable Section */}
           <h2 className="rn-title">📅 My Timetable</h2>
 
           {loading ? (
             <p>Loading timetable...</p>
-          ) : teacherTimeTable.length === 0 ? (
-            <p>No timetable available</p>
           ) : (
             <>
-              {/* Teacher Meta Info */}
               <div className="rn-meta-card">
                 <strong>Class:</strong> {teacherMeta.className} &nbsp; | &nbsp;
                 <strong>Subject:</strong> {teacherMeta.subjectName}
@@ -110,9 +118,10 @@ export default function ReceiveNotifications() {
                 <thead>
                   <tr>
                     <th>Day</th>
-                    <th>Start Time</th>
-                    <th>End Time</th>
+                    <th>Start</th>
+                    <th>End</th>
                     <th>Duration</th>
+                    <th>Schedule Meeting</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -122,6 +131,9 @@ export default function ReceiveNotifications() {
                       <td>{t.startTime}</td>
                       <td>{t.endTime}</td>
                       <td>{t.durationMinutes} mins</td>
+                      <td>
+                       <button onClick={() => navigator("/teacher/timetable", { state: { timetable: t, teacherMeta: JSON.parse(JSON.stringify(data)) } })}> Go to Timetable </button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -131,16 +143,23 @@ export default function ReceiveNotifications() {
 
           <hr />
 
+          {/* Notifications Section */}
           <h2 className="rn-title">📩 Notifications</h2>
 
-          {notifications.length === 0 ? (
+          {mergedNotifications.length === 0 ? (
             <p>No notifications</p>
           ) : (
             <div className="rn-list">
-              {notifications.map((n) => (
-                <div key={n.id} className="rn-card">
-                  <h4>{n.title}</h4>
-                  <p>{n.message}</p>
+              {mergedNotifications.map((n, index) => (
+                <div key={index} className="rn-card">
+                  <div className="rn-card-header">
+                    <span className="rn-role">{n.role || "ADMIN"}</span>
+                    <span className="rn-date">{n.date}</span>
+                  </div>
+
+                  <h4 className="rn-title-text">{n.title}</h4>
+                  <p className="rn-message">{n.message}</p>
+
                   <span className="rn-badge">{n.sendTo}</span>
                 </div>
               ))}

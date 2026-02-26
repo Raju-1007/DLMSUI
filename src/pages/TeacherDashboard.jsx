@@ -1,293 +1,18 @@
-// import React, { useState, useEffect } from 'react';
-// import Navbar from '../components/Navbar';
-// import Sidebar from '../components/Sidebar';
-// import { http } from '../api/axios';
 
-// // 🔹 Heatmap Card Component
-// function HeatmapCard() {
-
-//   const [grid, setGrid] = useState([...Array(7)].map(() => Array(24).fill(0)));
-//   const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-
-//   useEffect(() => {
-//     http
-//       .get('/analytics/engagement/heatmap?courseId=1')
-//       .then((r) => setGrid(r.data?.grid || grid))
-//       .catch((err) => console.error('Error loading heatmap:', err));
-//   }, []);
-
-//   return (
-//     <div className="card" style={{ padding: 12 }}>
-//       <h3 style={{ marginBottom: 8 }}>Engagement Heatmap</h3>
-//       <div
-//         style={{
-//           display: 'grid',
-//           gridTemplateColumns: '80px repeat(24, 1fr)',
-//           gap: 4,
-//           fontSize: 12,
-//         }}
-//       >
-//         <div />
-//         {Array.from({ length: 24 }).map((_, h) => (
-//           <div key={h} style={{ textAlign: 'center' }}>
-//             {h}
-//           </div>
-//         ))}
-//         {grid.map((row, d) => (
-//           <React.Fragment key={d}>
-//             <div style={{ textAlign: 'right', paddingRight: 6 }}>{days[d]}</div>
-//             {row.map((v, h) => {
-//               const a = Math.min(1, v / 10);
-//               const bg = `rgba(59,130,246,${0.1 + 0.6 * a})`;
-//               return (
-//                 <div
-//                   key={h}
-//                   title={`${v} events`}
-//                   style={{
-//                     height: 14,
-//                     borderRadius: 6,
-//                     background: bg,
-//                     transition: 'background 0.3s',
-//                   }}
-//                 />
-//               );
-//             })}
-//           </React.Fragment>
-//         ))}
-//       </div>
-//     </div>
-//   );
-// }
-
-// // 🔹 Assign Topic Card Component
-
-
-// // 🔹 Main Teacher Dashboard
-// export default function TeacherDashboard() {
-//   return (
-//     <div>
-//       <Navbar />
-//       <div style={{ display: 'grid', gridTemplateColumns: '250px 1fr' }}>
-//         <Sidebar />
-//         <div style={{ padding: 16 }}>
-//           <h2>Teacher Dashboard</h2>
-
-//           {/* Snapshot */}
-//           <div className="card" style={{ marginBottom: 16 }}>
-//             Class performance snapshot
-//           </div>
-
-//           {/* Engagement Heatmap */}
-//           <div
-//             style={{
-//               display: 'grid',
-//               gridTemplateColumns: '1fr',
-//               gap: 12,
-//               marginTop: 12,
-//             }}
-//           >
-//             <HeatmapCard />
-//           </div>
-//         </div>
-//       </div>
-//     </div>
-//   );
-// }
-
-
-// import React, { useState, useEffect } from "react";
-// import Navbar from "../components/Navbar";
-// import Sidebar from "../components/Sidebar";
-// import Footer from "../components/Footer";
-// import { useNavigate } from "react-router-dom";
-
-// export default function TeacherDashboard() {
-//   const navigate=useNavigate();
-//   return (
-//     <div>
-//       <Navbar />
-
-//       <div style={{ display: "grid", gridTemplateColumns: "250px 1fr" }}>
-//         <Sidebar />
-
-//         {/* RIGHT CONTENT AREA */}
-//         <div className="td-wrapper">
-
-//           {/* Title */}
-//            <button
-//               className="add-details-btn"
-//               onClick={() => navigate("/instructor-details")}
-//             >
-//               ➕ Add Your Details
-//             </button>
-//           <h2 className="td-title">Teacher Dashboard</h2>
-
-
-//           {/* TOP SIX CARDS */}
-//           <div className="td-grid">
-
-//             <div className="td-card">
-//               <div className="td-icon blue">👤</div>
-//               <p className="td-value">34527</p>
-//               <p className="td-label">Total Students</p>
-//               <p className="td-sub">70% Increase in 18 Days</p>
-//             </div>
-
-//             <div className="td-card">
-//               <div className="td-icon blue">🧑‍🎓</div>
-//               <p className="td-value">5675</p>
-//               <p className="td-label">New Students</p>
-//               <p className="td-sub">55% Increase in 17 Days</p>
-//             </div>
-
-//             <div className="td-card">
-//               <div className="td-icon yellow">📘</div>
-//               <p className="td-value">126</p>
-//               <p className="td-label">Total Courses</p>
-//               <p className="td-sub">66% Increase in 18 Days</p>
-//             </div>
-
-//             <div className="td-card">
-//               <div className="td-icon purple">👨‍🏫</div>
-//               <p className="td-value">638</p>
-//               <p className="td-label">Total Instructors</p>
-//               <p className="td-sub">7% Increase in 18 Days</p>
-//             </div>
-
-//             <div className="td-card">
-//               <div className="td-icon blue">👨‍🎓</div>
-//               <p className="td-value">27334</p>
-//               <p className="td-label">Total Active Students</p>
-//               <p className="td-sub">55% Increase in 17 Days</p>
-//             </div>
-
-//             <div className="td-card">
-//               <div className="td-icon yellow">🎓</div>
-//               <p className="td-value">7218</p>
-//               <p className="td-label">Total Passed Out Students</p>
-//               <p className="td-sub">55% Increase in 17 Days</p>
-//             </div>
-
-//           </div>
-
-//           {/* SCHEDULES */}
-//           <div className="td-box">
-//             <h3>SCHEDULES</h3>
-
-//             <p><b>Title:</b> New Course Launch (17/09/2024 · 9:30 AM)</p>
-//             <p><b>Body:</b></p>
-//             <p>
-//               We are pleased to announce our new course “Introduction to Data Science”
-//               starting today. This course is designed for both beginners and advanced learners.
-//               Enroll now through your dashboard.
-//             </p>
-//           </div>
-
-//           {/* STUDENT REVIEWS */}
-//           <div className="td-box">
-//             <h3>STUDENT REVIEWS</h3>
-
-//             <p><b>Review 1</b></p>
-//             <p>“The instructor is excellent!”</p>
-
-//             <br />
-
-//             <p><b>Review 2</b></p>
-//             <p>“Very engaging and knowledgeable lecturer.”</p>
-
-//             <br />
-
-//             <p><b>Review 3</b></p>
-//             <p>“Highly recommend — learned a lot.”</p>
-//           </div>
-
-//           {/* STUDENT PROFILES TABLE */}
-//           <div className="td-box">
-//             <h3>STUDENT PROFILES</h3>
-
-//             <input
-//               type="text"
-//               placeholder="Search Student by Name or ID"
-//               className="td-search"
-//             />
-
-//             <table className="td-table">
-//               <thead>
-//                 <tr>
-//                   <th>STUDENT NAME</th>
-//                   <th>STUDENT ID</th>
-//                   <th>COURSE NAME</th>
-//                   <th>COURSE COMPLETED (%)</th>
-//                   <th>GRADE</th>
-//                   <th>REPORTS</th>
-//                   <th>STATUS</th>
-//                 </tr>
-//               </thead>
-
-//               <tbody>
-//                 <tr>
-//                   <td>Pankaj</td>
-//                   <td>9867489</td>
-//                   <td>Basic Computer Language</td>
-//                   <td>85%</td>
-//                   <td>B+</td>
-//                   <td><span className="view">View Report</span></td>
-//                   <td><span className="status green">Completed</span></td>
-//                 </tr>
-
-//                 <tr>
-//                   <td>Dhawan</td>
-//                   <td>5934670</td>
-//                   <td>Data Entry</td>
-//                   <td>35%</td>
-//                   <td>C</td>
-//                   <td><span className="view">View Report</span></td>
-//                   <td><span className="status yellow">Upcoming</span></td>
-//                 </tr>
-
-//                 <tr>
-//                   <td>Gambhir</td>
-//                   <td>2384632</td>
-//                   <td>DMI Tool</td>
-//                   <td>90%</td>
-//                   <td>A+</td>
-//                   <td><span className="view">View Report</span></td>
-//                   <td><span className="status green">Completed</span></td>
-//                 </tr>
-
-//                 <tr>
-//                   <td>Ruturaj</td>
-//                   <td>4287098</td>
-//                   <td>Skill Development</td>
-//                   <td>67%</td>
-//                   <td>B+</td>
-//                   <td><span className="view">View Report</span></td>
-//                   <td><span className="status green">Completed</span></td>
-//                 </tr>
-//               </tbody>
-//             </table>
-//           </div>
-
-
-
-//         </div>
-//       </div>
-//       <Footer/>
-//     </div>
-//   );
-// }
 
 import React, { useEffect, useState } from "react";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 import Footer from "../components/Footer";
 import { useMessage } from "../context/MessageContext";
-import LoginActivity from "../components/LoginActivity";
+
 import axios from "axios";
 import { useSelector } from "react-redux";
 
 
+
 export default function TeacherDashboard() {
+   
   const [studentsIds, setStudentsIds] = useState([]);
   const [Timetable, setTimetable] = useState([]);
   const [studentAssignmnets, setstudentAssignmnets] = useState("");
@@ -370,7 +95,7 @@ export default function TeacherDashboard() {
     }
   };
   const { showSuccess, showError } = useMessage();
-  LoginActivity();
+
   return (
     <>
       <Navbar />
@@ -384,7 +109,7 @@ export default function TeacherDashboard() {
             <div>
               <h2>Dashboard</h2>
               <p className="td-subtitle">
-                Good Morning, Ms. Priya. Here's an overview of your classes today.
+                {login.userDetails.fullName}. Here's an overview of your classes today.
               </p>
             </div>
 
@@ -486,15 +211,11 @@ export default function TeacherDashboard() {
                   : (
                     <tr>
                       <td colSpan="5" style={{ textAlign: "center" }}>
-                        No Timetable Data
+                        No Assignments Data
                       </td>
                     </tr>
-
-
-                  )};
-
-
-              </tbody>
+                  )}
+                </tbody>
             </table>
           </div>
 

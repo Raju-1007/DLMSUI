@@ -1,312 +1,180 @@
-// src/pages/TeacherGradebook.jsx
 import React, { useEffect, useState } from "react";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 import Footer from "../components/Footer";
 import axios from "axios";
-import { useMessage } from "../context/MessageContext"; 
+import { useMessage } from "../context/MessageContext";
+import { useSelector } from "react-redux";
 
 
 export default function TeacherGradebook() {
-  const { showSuccess, showError } = useMessage();
+  const { showError } = useMessage();
+  const login = useSelector((state) => state.auth.user);
+
   const [rows, setRows] = useState([]);
+  const [teacherProfile, setTeacherProfile] = useState(null);
+  const [loading, setLoading] = useState(true);
+   const[StudentClassDetails,setStudentClassDetails]=useState("");
 
-  const [showAssignPopup, setShowAssignPopup] = useState(false);
-  const [showAddPopup, setShowAddPopup] = useState(false);
-  const [studentsIds, setStudentsIds] = useState([]);
-
-  // Assign form
-  const [form, setForm] = useState({
-    studentId: "",
-    student: "",
-    className: "",
-    subject: "",
-    assessment: "",
-    marks: "",
-    outOf: "",
-    grade: "",
-  });
-
-  // Add form
-  const [newForm, setNewForm] = useState({
-    studentId: "",
-    student: "",
-    className: "",
-    subject: "",
-    assessment: "",
-    marks: "",
-    outOf: "",
-    grade: "",
-  });
-
+  // Load Teacher Profile
   useEffect(() => {
-    loadGrades();
-    getStudentIds();
-  }, []);
-
-  // LOAD GRADES
-  const loadGrades = async () => {
-    try {
-      const res = await axios.get(import.meta.env.VITE_API_BASE_URL+"/api/grades/getGrades");
-      setRows(res.data || []);
-    } catch {
-      setRows([
-        {
-          id: 1,
-          studentId: "092820",
-          student: "Pankaj",
-          className: "8A",
-          subject: "Maths",
-          assessment: "Unit Test 1",
-          marks: 18,
-          outOf: 20,
-          grade: "A",
-        },
-      ]);
+    if (login?.userDetails?.loginid) {
+      loadProfile();
     }
-  };
+  }, [login]);
 
-  // LOAD STUDENT IDS
-  const getStudentIds = async () => {
+  // Load Grades After Subject Available
+  useEffect(() => {
+    if (teacherProfile?.subjectName) {
+      loadGradesBySubject();
+    }
+  }, [teacherProfile]);
+
+   useEffect(() => {
+      if (rows) {
+        getStudentClassDetails();
+      }
+    }, [rows]);
+
+  const loadProfile = async () => {
     try {
       const res = await axios.get(
-        import.meta.env.VITE_API_BASE_URL+"/api/roles/studentGetDataAttendance"
+        `${import.meta.env.VITE_API_BASE_URL}/login/login/teacher/profile/${login.userDetails.loginid}`
       );
-      setStudentsIds(res.data || []);
+      setTeacherProfile(res.data);
     } catch {
-      setStudentsIds([]);
+      showError("Failed to load teacher profile");
     }
   };
 
-  // OPEN ASSIGN
-  const openAssign = (r) => {
-    setForm(r);
-    setShowAssignPopup(true);
-  };
-
-  
-  const saveAssign = async () => {
+  const loadGradesBySubject = async () => {
     try {
-      await axios.post(
-        import.meta.env.VITE_API_BASE_URL+"/api/grades/addGrade",
-        form
+      const res = await axios.get(
+        `${import.meta.env.VITE_API_BASE_URL}/analytics/api/grades/getBySubject`,
+        {
+          params: { assessmentName: teacherProfile.subjectName },
+        }
       );
-      showSuccess("Grade Assigned Successfully ✔");
+
+      setRows(res.data || []);
     } catch {
-      showError("API failed — Assigned locally");
+      showError("Failed to load grades");
+    } finally {
+      setLoading(false);
     }
-    setShowAssignPopup(false);
   };
 
-  // OPEN ADD
-  const openAddPopup = () => {
-    setNewForm({ 
-      studentId: "",
-      student: "",
-      className: "",
-      subject: "",
-      assessment: "",
-      marks: "",
-      outOf: "",
-      grade: "",
-    });
-    setShowAddPopup(true);
+  const getStudentClassDetails = async () => {
+    try {
+
+      setLoading(true);
+
+      const res = await axios.get(
+        `${import.meta.env.VITE_API_BASE_URL}/analytics/api/grades/getStudentClassDetails`,
+        {
+          params: {
+            loginId: rows[0].studentId,
+          },
+        }
+      );
+      setStudentClassDetails(res.data[0] || []);
+    } catch {
+      showError("Failed to load attendance");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleAddStudentChange = (e) => {
-  const studentuid = e.target.value;
-
-  const selectedStudent = studentsIds.find(
-    (stu) => String(stu.loginid) === String(studentuid)
-  );
- 
-
-  if (!selectedStudent) return;
-
-  setNewForm({
-    ...newForm,
-    studentId: studentuid,
-    student: selectedStudent.fullName || selectedStudent.loginid,
-    className: "",
-  });
-};
-
-
-  // SAVE NEW GRADE
-  const saveNewGrade = async () => {
-    const newItem = { id: Date.now(), ...newForm };
-    console.log(newItem,"============================================");
-
-    // try {
-    //   await axios.post(
-    //     import.meta.env.VITE_API_BASE_URL+"/api/teacher/grades/add",
-    //     newItem
-    //   );
-    // } catch {}
-
-    setRows((prev) => [...prev, newItem]);
-    setShowAddPopup(false);
+  const getStatusColor = (percentage) => {
+    if (percentage < 35) return "#dc2626";
+    if (percentage >= 80) return "#16a34a";
+    if (percentage >= 60) return "#2563eb";
+    return "#f59e0b";
   };
 
-  // STUDENT ID DROPDOWN (REUSABLE)
-  const studentDropdown = (value, onChange) => (
-    <select value={value} onChange={onChange}>
-      <option value="">Select Student</option>
-      {studentsIds.map((stu) => (
-        <option key={stu.studentuid} value={stu.studentuid}>
-          {stu.loginid}
-        </option>
-      ))}
-    </select>
-  );
+  const getStatusText = (percentage) => {
+    if (percentage < 35) return "Low Performance";
+    if (percentage >= 80) return "Very Good";
+    if (percentage >= 60) return "Good";
+    return "Average";
+  };
 
   return (
     <div>
       <Navbar />
 
-      <div className="teacher-layout">
+      <div className="tg-layout">
         <Sidebar />
 
-        <div className="teacher-main">
-          <h2 className="teacher-page-title">Gradebook</h2>
+        <div className="tg-main">
+          <h2 className="tg-title">
+            Students Gradebooks 
+          </h2>
 
-          <div className="grade-add-btn-container">
-            <button className="grade-add-btn" onClick={openAddPopup}>
-              + Add Grade
-            </button>
-          </div>
-
-          <div className="teacher-card">
-            <table className="teacher-table">
-              <thead>
-                <tr>
-                  <th>Student ID</th>
-                  <th>Student</th>
-                  <th>Class</th>
-                  <th>Subject</th>
-                  <th>Assessment</th>
-                  <th>Marks</th>
-                  <th>Out Of</th>
-                  <th>Grade</th>
-                  <th>Assign</th>
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map((r) => (
-                  <tr key={r.id}>
-                    <td>{r.studentId}</td>
-                    <td>{r.student}</td>
-                    <td>{r.className}</td>
-                    <td>{r.subject}</td>
-                    <td>{r.assessment}</td>
-                    <td>{r.marks}</td>
-                    <td>{r.outOf}</td>
-                    <td>{r.grade}</td>
-                    <td>
-                      <button
-                        className="assign-btn"
-                        onClick={() => openAssign(r)}
-                      >
-                        Assign
-                      </button>
-                    </td>
+          <div className="tg-card">
+            {loading ? (
+              <div className="tg-loading">⏳ Loading grades...</div>
+            ) : (
+              <table className="tg-table">
+                <thead>
+                  <tr>
+                    <th>Student</th>
+                    <th>className</th>
+                    <th>Assessment</th>
+                    <th>Marks</th>
+                    <th>Out Of</th>
+                    <th>%</th>
+                    <th>date</th>
+                    <th>Status</th>
+                    <th>Progress</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {rows.map((r) => {
+                    const percentage = Math.round(
+                      (r.score / r.total) * 100
+                    );
+
+                    return (
+                      <tr key={r.id}>
+                        <td>{r.studentName}</td>
+                        <td>{StudentClassDetails.class_name}</td>
+                        <td>{r.assessmentName}</td>
+                        <td>{r.score}</td>
+                        <td>{r.total}</td>
+                        <td>{percentage}%</td>
+                        <td>{r.date}</td>
+
+                        <td
+                          style={{
+                            color: getStatusColor(percentage),
+                            fontWeight: 600,
+                          }}
+                        >
+                          {getStatusText(percentage)}
+                        </td>
+
+                        <td>
+                          <div className="tg-progress-wrapper">
+                            <div
+                              className="tg-progress-fill"
+                              style={{
+                                width: `${percentage}%`,
+                                background: getStatusColor(percentage),
+                              }}
+                            />
+                            <span className="tg-tooltip">
+                              {getStatusText(percentage)}
+                            </span>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            )}
           </div>
-
-          {/* ASSIGN POPUP */}
-          {showAssignPopup && (
-            <div className="ts-overlay" onClick={() => setShowAssignPopup(false)}>
-              <div className="ts-popup" onClick={(e) => e.stopPropagation()}>
-                <h3 className="ts-popup-title">Assign Grade</h3>
-
-                <label>STUDENT ID :</label>
-                {studentDropdown(form.studentId, (e) =>
-                  setForm({ ...form, studentId: e.target.value })
-                )}
-                {Object.keys(form)
-                  .filter((k) => k !== "studentId")
-                  .map((key) => {
-                    if(key!='id'){
-                    return <>
-                    <div >
-                      <label>{key.toUpperCase()}</label>
-                      <input
-                        key={key}
-                        value={form[key]}
-                        onChange={(e) =>
-                          setForm({ ...form, [key]: e.target.value })
-                        }
-                      />
-                    </div>
-                    </>
-}})}
-
-                <div className="ts-popup-actions">
-                  <button
-                    className="ts-btn ts-cancel"
-                    onClick={() => setShowAssignPopup(false)}
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    className="ts-btn ts-submit"
-                    onClick={saveAssign}
-                  >
-                    Assign Grade
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* ADD POPUP */}
-          {showAddPopup && (
-  <div className="ts-overlay" onClick={() => setShowAddPopup(false)}>
-    <div className="ts-popup" onClick={(e) => e.stopPropagation()}>
-      <h3 className="ts-popup-title">Add New Grade</h3>
-
-      {/* STUDENT ID */}
-      <label>STUDENT ID</label>
-      {studentDropdown(newForm.studentId, handleAddStudentChange)}
-
-      {/* FORM FIELDS */}
-      {Object.keys(newForm)
-        .filter((k) => k !== "studentId")
-        .map((key) => (
-          <div key={key}>
-            <label>{key.toUpperCase()}</label>
-            <input
-              value={newForm[key]}
-              readOnly={key === "student"}   // ✅ ONLY NAME READONLY
-              onChange={(e) =>
-                setNewForm({ ...newForm, [key]: e.target.value })
-              }
-            />
-          </div>
-        ))}
-
-      <div className="ts-popup-actions">
-        <button
-          className="ts-btn ts-cancel"
-          onClick={() => setShowAddPopup(false)}
-        >
-          Cancel
-        </button>
-        <button
-          className="ts-btn ts-submit"
-          onClick={saveNewGrade}
-        >
-          Add Grade
-        </button>
-      </div>
-    </div>
-  </div>
-)}
-
-
         </div>
       </div>
 

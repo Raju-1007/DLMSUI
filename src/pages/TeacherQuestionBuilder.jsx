@@ -2,19 +2,24 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import Sidebar from "../components/Sidebar";
 import Navbar from "../components/Navbar";
-import { useParams } from "react-router-dom";
+import { useLocation, useParams } from "react-router-dom";
 import { useSelector } from "react-redux";
-import { useMessage } from "../context/MessageContext"; 
-
+import { useMessage } from "../context/MessageContext";
 
 export default function TeacherQuestionBuilder() {
   const { showSuccess, showError } = useMessage();
   const loginDetails = useSelector((state) => state.auth.user);
   const { getstudentId } = useParams();
+  const { state } = useLocation();
 
-  const assessmentId = getstudentId;
+  console.log("Received Data prepare Questions:", state);
+
+  const assignmentId = state?.assignmentId;   // from previous page
+  const classId = state?.classId;
+  const subjectId = state?.subjectId;
 
   const [questions, setQuestions] = useState([]);
+
   const [form, setForm] = useState({
     prompt: "",
     optionA: "",
@@ -25,13 +30,15 @@ export default function TeacherQuestionBuilder() {
   });
 
   useEffect(() => {
-    loadQuestions();
-  }, []);
+    if (assignmentId) {
+      loadQuestions();
+    }
+  }, [assignmentId]);
 
   const loadQuestions = async () => {
     try {
       const res = await axios.get(
-        `${import.meta.env.VITE_API_BASE_URL}/api/teacher/assessment/${assessmentId}/questions`
+        `${import.meta.env.VITE_API_BASE_URL}/notify/assessment/${assignmentId}/questions`
       );
 
       const data = Array.isArray(res.data)
@@ -39,20 +46,39 @@ export default function TeacherQuestionBuilder() {
         : res.data?.data || [];
 
       setQuestions(data);
-    } catch(err) {
-       showError("Failed to load questions", err);
+    } catch (err) {
+      showError("Failed to load questions");
       setQuestions([]);
     }
   };
 
   const addQuestion = async () => {
     try {
+      if (!assignmentId || !classId || !subjectId) {
+        showError("Assignment details missing");
+        return;
+      }
+
       await axios.post(
-        import.meta.env.VITE_API_BASE_URL + "/api/teacher/questions/add",
+        `${import.meta.env.VITE_API_BASE_URL}/notify/addQuestionDetails`,
         {
-          ...form,
-          assessmentId,
-          getstudentId,
+          teacherId: loginDetails?.userDetails?.loginid,
+          subjectId: subjectId,
+
+          classes: {
+            class_id: classId
+          },
+
+          assignmentDetails: {
+            assignment_id: assignmentId
+          },
+
+          prompt: form.prompt,
+          optionA: form.optionA,
+          optionB: form.optionB,
+          optionC: form.optionC,
+          optionD: form.optionD,
+          correctOption: form.correctOption
         }
       );
 
@@ -68,18 +94,17 @@ export default function TeacherQuestionBuilder() {
       });
 
       loadQuestions();
-    } catch(err) {
-       showError(err);
+
+    } catch (err) {
+      console.log(err);
       showError("Failed to add question");
     }
   };
 
   return (
-    
-
     <div className="app-layout">
-     <Sidebar />
-     
+      <Sidebar />
+
       <div className="app-main">
         <Navbar />
 
@@ -163,7 +188,7 @@ export default function TeacherQuestionBuilder() {
               <p className="empty">No questions added yet</p>
             ) : (
               questions.map((q, i) => (
-                <div key={q.id || i} className="question-item">
+                <div key={q.questionid || i} className="question-item">
                   <strong>Q{i + 1}.</strong> {q.prompt}
                 </div>
               ))

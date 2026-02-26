@@ -2,130 +2,90 @@ import React, { useEffect, useState } from "react";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 import Footer from "../components/Footer";
-
-import { useMessage } from "../context/MessageContext"; 
+import axios from "axios";
+import { useMessage } from "../context/MessageContext";
+import { useSelector } from "react-redux";
 
 export default function SuperAdminDistrictManagementPage() {
-  const { showSuccess, showError } = useMessage();
+  const { showError, showSuccess } = useMessage();
+
   const [districts, setDistricts] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [showAssignModal, setShowAssignModal] = useState(false);
-
-  const [newDistrict, setNewDistrict] = useState({
-    name: "",
-    state: "Andhra Pradesh",
-    mandals: 0,
-  });
-
-  const [editDistrict, setEditDistrict] = useState(null);
-  const [assignAdmin, setAssignAdmin] = useState({
-    name: "",
-    email: "",
-    phone: "",
-  });
-
-  // Fallback data if API fails or returns nothing
-  const fallback = [
-    {
-      id: 1,
-      name: "Krishna",
-      state: "Andhra Pradesh",
-      mandals: 25,
-      schools: 120,
-      students: 34000,
-    },
-    {
-      id: 2,
-      name: "Guntur",
-      state: "Andhra Pradesh",
-      mandals: 22,
-      schools: 98,
-      students: 28000,
-    },
-    {
-      id: 3,
-      name: "Nellore",
-      state: "Andhra Pradesh",
-      mandals: 18,
-      schools: 75,
-      students: 22000,
-    },
-    {
-      id: 4,
-      name: "Prakasam",
-      state: "Andhra Pradesh",
-      mandals: 20,
-      schools: 60,
-      students: 18000,
-    },
-  ];
-
+  const [showPopup, setShowPopup] = useState(false);
+  const [selectedAdmin, setSelectedAdmin] = useState(null);
+  const login=useSelector((state)=>state.auth.user);
   useEffect(() => {
     loadDistricts();
   }, []);
 
+  // ================= LOAD DISTRICTS =================
   const loadDistricts = async () => {
     setLoading(true);
     try {
-      const res = await axios.get("/super-admin/districts");
-      console.log("District API:", res?.data);
+      const res = await axios.get(
+        `${import.meta.env.VITE_API_BASE_URL}/analytics/districtsWiseCount`
+      );
 
-      let list = [];
-
-      if (Array.isArray(res?.data)) {
-        list = res.data;
-      } else if (Array.isArray(res?.data?.data)) {
-        list = res.data.data;
-      } else if (Array.isArray(res?.data?.districts)) {
-        list = res.data.districts;
+      if (Array.isArray(res.data)) {
+        setDistricts(res.data);
       } else {
-        console.warn("Invalid API format → using fallback");
-        list = fallback;
+        setDistricts([]);
       }
-
-      setDistricts(list);
-    } catch(err) {
-       showError("District API failed → using fallback:", err);
-      setDistricts(fallback);
+    } catch (err) {
+      showError("Failed to load district data");
+      setDistricts([]);
     }
     setLoading(false);
   };
 
-  const handleAddDistrict = () => {
-    const newEntry = {
-      id: districts.length + 1,
-      ...newDistrict,
-      schools: 0,
-      students: 0,
-    };
-    setDistricts([...districts, newEntry]);
-    setShowAddModal(false);
-    setNewDistrict({ name: "", state: "Andhra Pradesh", mandals: 0 });
-  };
+  // ================= GET ADMIN BY DISTRICT =================
+  const handleAssignToAdmin = async (district) => {
+    try {
+      const res = await axios.get(
+        `${import.meta.env.VITE_API_BASE_URL}/analytics/getAdminDetailsByDitrictId/${district.district_id}`
+      );
 
-  const handleEditDistrict = () => {
-    const updated = districts.map((d) =>
-      d.id === editDistrict.id ? editDistrict : d
-    );
-    setDistricts(updated);
-    setShowEditModal(false);
-  };
-
-  const handleDeleteDistrict = (id) => {
-    if (window.confirm("Are you sure? This cannot be undone.")) {
-      setDistricts(districts.filter((d) => d.id !== id));
+      if (res.data && res.data.length > 0) {
+        setSelectedAdmin({
+          ...res.data[0],
+          district_id: district.district_id
+        });
+        setShowPopup(true);
+      } else {
+        showError("No Admin found for this district");
+      }
+    } catch (err) {
+      showError("Failed to load Admin Details based on DistrictId");
     }
   };
 
-  const handleAssignAdmin = () => {
-    showSuccess("District admin assigned (demo only)");
-    setShowAssignModal(false);
-    setAssignAdmin({ name: "", email: "", phone: "" });
+  // ================= ASSIGN ADMIN =================
+  const handleAssign = async (admin) => {
+    const payLoad = {
+      superAdminId:login?.userDetails?.loginid,
+      superAdminName:login?.userDetails?.fullName,
+      adminName: admin.teacher_name,
+      adminEmail: admin.teacher_email,
+      adminPhone: admin.teacher_phone,
+      adminRole: admin.role,
+      districtId: admin.district_id
+    };
+
+    try {
+      await axios.post(
+        `${import.meta.env.VITE_API_BASE_URL}/analytics/api/grades/addAssignToAdmin`,
+        payLoad
+      );
+
+      showSuccess("Admin assigned successfully");
+      setShowPopup(false);
+    } catch (err) {
+      showError("Unable to assign to Admin");
+    }
   };
 
+  // ================= LOADING =================
   if (loading) {
     return (
       <div>
@@ -141,32 +101,25 @@ export default function SuperAdminDistrictManagementPage() {
     );
   }
 
+  // ================= UI =================
   return (
     <div>
       <Navbar />
 
-      {/* Layout: sidebar + main content */}
       <div className="layout-grid">
         <Sidebar />
 
         <main className="admin-main">
-          <h2 className="admin-title"> System Management</h2>
-
-          <button
-            className="btn-primary"
-            onClick={() => setShowAddModal(true)}
-          >
-            + Add System Managment
-          </button>
+          <h2 className="admin-title">Super Admin Management</h2>
 
           <section className="table-card">
             <table className="styled-table">
               <thead>
                 <tr>
-                  <th>ID</th>
                   <th>District Name</th>
                   <th>State</th>
                   <th>Mandals</th>
+                  <th>Villages</th>
                   <th>Schools</th>
                   <th>Students</th>
                   <th>Actions</th>
@@ -174,186 +127,74 @@ export default function SuperAdminDistrictManagementPage() {
               </thead>
 
               <tbody>
-                {districts.map((d) => (
-                  <tr key={d.id}>
-                    <td>{d.id}</td>
-                    <td>{d.name}</td>
-                    <td>{d.state}</td>
-                    <td>{d.mandals}</td>
-                    <td>{d.schools}</td>
-                    <td>{d.students}</td>
-                    <td>
-                      <button
-                        className="btn-edit"
-                        onClick={() => {
-                          setEditDistrict(d);
-                          setShowEditModal(true);
-                        }}
-                      >
-                        Edit
-                      </button>
+                {districts.length > 0 ? (
+                  districts.map((d) => (
+                    <tr key={d.district_id}>
+                      <td>{d.district_name}</td>
+                      <td>AP</td>
+                      <td>{d.mandal_count}</td>
+                      <td>{d.village_count}</td>
+                      <td>{d.school_count}</td>
+                      <td>{d.student_count}</td>
 
-                      <button
-                        className="btn-assign"
-                        onClick={() => setShowAssignModal(true)}
-                      >
-                        Assign Admin
-                      </button>
+                      <td>
+                        <button
+                          className="btn-assign"
+                          onClick={() => handleAssignToAdmin(d)}
+                        >
+                          Assign Admin
+                        </button>
 
-                      <button
-                        className="btn-delete"
-                        onClick={() => handleDeleteDistrict(d.id)}
-                      >
-                        Delete
-                      </button>
+                        <button className="btn-delete">
+                          Delete
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="7" style={{ textAlign: "center" }}>
+                      No District Data Available
                     </td>
                   </tr>
-                ))}
+                )}
               </tbody>
             </table>
           </section>
+        </main>
 
-          {/* Add Modal */}
-          {showAddModal && (
-            <Modal>
-              <h3>Add District</h3>
-              <input
-                type="text"
-                placeholder="District Name"
-                value={newDistrict.name}
-                onChange={(e) =>
-                  setNewDistrict({ ...newDistrict, name: e.target.value })
-                }
-              />
-              <input
-                type="text"
-                placeholder="State"
-                value={newDistrict.state}
-                onChange={(e) =>
-                  setNewDistrict({ ...newDistrict, state: e.target.value })
-                }
-              />
-              <input
-                type="number"
-                placeholder="Mandals Count"
-                value={newDistrict.mandals}
-                onChange={(e) =>
-                  setNewDistrict({
-                    ...newDistrict,
-                    mandals: Number(e.target.value),
-                  })
-                }
-              />
-              <div className="modal-actions">
-                <button className="btn-save" onClick={handleAddDistrict}>
-                  Save
-                </button>
-                <button
-                  className="btn-cancel"
-                  onClick={() => setShowAddModal(false)}
-                >
-                  Cancel
-                </button>
-              </div>
-            </Modal>
-          )}
-
-          {/* Edit Modal */}
-          {showEditModal && editDistrict && (
-            <Modal>
-              <h3>Edit District</h3>
-              <input
-                type="text"
-                value={editDistrict.name}
-                onChange={(e) =>
-                  setEditDistrict({ ...editDistrict, name: e.target.value })
-                }
-              />
-              <input
-                type="text"
-                value={editDistrict.state}
-                onChange={(e) =>
-                  setEditDistrict({ ...editDistrict, state: e.target.value })
-                }
-              />
-              <input
-                type="number"
-                value={editDistrict.mandals}
-                onChange={(e) =>
-                  setEditDistrict({
-                    ...editDistrict,
-                    mandals: Number(e.target.value),
-                  })
-                }
-              />
-              <div className="modal-actions">
-                <button className="btn-save" onClick={handleEditDistrict}>
-                  Save
-                </button>
-                <button
-                  className="btn-cancel"
-                  onClick={() => setShowEditModal(false)}
-                >
-                  Cancel
-                </button>
-              </div>
-            </Modal>
-          )}
-
-          {/* Assign Admin Modal */}
-          {showAssignModal && (
-            <Modal>
+        {/* ================= POPUP ================= */}
+        {showPopup && selectedAdmin && (
+          <div className="modal-overlay">
+            <div className="modal">
               <h3>Assign District Admin</h3>
-              <input
-                type="text"
-                placeholder="Admin Name"
-                value={assignAdmin.name}
-                onChange={(e) =>
-                  setAssignAdmin({ ...assignAdmin, name: e.target.value })
-                }
-              />
-              <input
-                type="email"
-                placeholder="Admin Email"
-                value={assignAdmin.email}
-                onChange={(e) =>
-                  setAssignAdmin({ ...assignAdmin, email: e.target.value })
-                }
-              />
-              <input
-                type="text"
-                placeholder="Admin Phone"
-                value={assignAdmin.phone}
-                onChange={(e) =>
-                  setAssignAdmin({ ...assignAdmin, phone: e.target.value })
-                }
-              />
+
+              <p><strong>Name:</strong> {selectedAdmin.teacher_name}</p>
+              <p><strong>Email:</strong> {selectedAdmin.teacher_email}</p>
+              <p><strong>Phone:</strong> {selectedAdmin.teacher_phone}</p>
+              <p><strong>Role:</strong> {selectedAdmin.role}</p>
+
               <div className="modal-actions">
-                <button className="btn-save" onClick={handleAssignAdmin}>
+                <button
+                  className="btn-save"
+                  onClick={() => handleAssign(selectedAdmin)}
+                >
                   Assign
                 </button>
+
                 <button
                   className="btn-cancel"
-                  onClick={() => setShowAssignModal(false)}
+                  onClick={() => setShowPopup(false)}
                 >
                   Cancel
                 </button>
               </div>
-            </Modal>
-          )}
-        </main>
+            </div>
+          </div>
+        )}
       </div>
 
       <Footer />
-    </div>
-  );
-}
-
-// Reusable Modal
-function Modal({ children }) {
-  return (
-    <div className="modal-overlay">
-      <div className="modal">{children}</div>
     </div>
   );
 }
