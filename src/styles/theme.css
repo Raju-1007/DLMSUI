@@ -602,6 +602,7 @@ html, body {
   font-weight: bold;
   color: #0a2a63;
   margin-bottom: 30px;
+  margin-left: 20px;
 }
 
 /* Grid (4 per row) */
@@ -609,6 +610,9 @@ html, body {
   display: grid;
   grid-template-columns: repeat(4, 230px);
   gap: 35px;
+   margin-left: 90px;
+
+
 }
 
 /* CARD */
@@ -1369,6 +1373,47 @@ html, body {
   color:  #59e6ff;
 }
 
+/* Disabled sidebar items */
+.sb-item.disabled {
+  opacity: 0.5;
+  pointer-events: none;
+  position: relative;
+}
+
+/* Tooltip */
+.tooltip {
+  position: relative;
+  cursor: not-allowed;
+}
+
+.tooltip-text {
+  visibility: hidden;
+  width: 200px;
+  background-color: #111;
+  color: #fff;
+  text-align: center;
+  border-radius: 6px;
+  padding: 6px 10px;
+  position: absolute;
+  left: 105%;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 12px;
+  z-index: 999;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.tooltip:hover .tooltip-text {
+  visibility: visible;
+  opacity: 1;
+}
+
+/* Smooth transition */
+.sb-item {
+  transition: 0.3s ease;
+}
+
 
 
 
@@ -1376,206 +1421,130 @@ html, body {
 
 /* =============================student dashbaord.js================= */
 
+/* ================= DASHBOARD WRAPPER ================= */
 
-
-/* Background like the image */
-/* RIGHT CONTENT BACKGROUND AREA */
 .dashboard-wrapper {
   background: #e9f1f9;
   padding: 30px 40px;
   min-height: calc(100vh - 70px);
 }
 
-/* TITLE */
+/* ================= TITLE ================= */
+
 .dashboard-title {
   font-size: 28px;
-  font-weight: bold;
+  font-weight: 700;
   color: #0a2a63;
+  margin-bottom: 5px;
 }
 
 .dashboard-sub {
-  margin-top: -5px;
-  margin-bottom: 25px;
-  font-size: 16px;
-  color: #333;
+  font-size: 15px;
+  color: #555;
+  margin-bottom: 35px;
 }
 
-/* GRID (THREE COLUMNS) */
+/* ================= GRID LAYOUT ================= */
+
 .dashboard-grid {
   display: grid;
-  grid-template-columns: repeat(3, 300px);
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 25px;
 }
 
-/* CARD */
+/* ================= CARD ================= */
+
 .dashboard-card {
-  background: white;
+  background: #ffffff;
   padding: 22px;
   border-radius: 14px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-   position: relative;          /* FIX – arrow stays inside card */
-  min-height: 120px;  
-  justify-content: right;
-  
+  box-shadow: 0 4px 15px rgba(0,0,0,0.06);
+  position: relative;
+  min-height: 150px;
+  transition: 0.3s ease;
+}
+
+.dashboard-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 22px rgba(0,0,0,0.1);
 }
 
 .dashboard-card h3 {
-  margin: 0;
-  font-size: 18px;
-  font-weight: bold;
-  justify-content: center;
-  display: flex;
-}
-.status-text{
-  justify-content: center;
-  display: flex;
+  font-size: 17px;
+  font-weight: 600;
+  margin-bottom: 10px;
+  color: #111;
+  text-align: center;
 }
 
-.status-text1{
-  margin-left: 60px;
-}
+/* ================= NUMBERS ================= */
 
 .dashboard-number {
-  font-size: 34px;
-  font-weight: bold;
-  color: #FF6801;
-  margin: 10px 0;
-  justify-content: center;
-  display: flex;
+  font-size: 36px;
+  font-weight: 700;
+  color: #ff6a00;
+  margin: 8px 0;
+   text-align: center;
 }
 
 .dashboard-orange {
   color: #ff8c00;
 }
 
-/* FULL WIDTH NOTIFICATION CARD */
-.notification-full {
-  grid-column: 1 / span 3;
-  text-align: center;
+.status-text {
+  font-size: 14px;
+  color: #666;
+   margin-left: 145px;
+}
+.status-text3 {
+  font-size: 14px;
+  color: #666;
+   margin-left: 100px;
 }
 
-/* TIMETABLE SELECT */
-.dash-select {
-  width: 100%;
-  padding: 6px;
+.status-text1 {
   margin-top: 10px;
-  border-radius: 6px;
-  border: 1px solid #ccc;
+  padding-left: 18px;
+  color: #444;
+   text-align: center;
+  
 }
+
+/* ================= ARROW BUTTON ================= */
 
 .dash-arrow {
   position: absolute;
-  bottom: 15px;
-  right: 15px;
+  bottom: 18px;
+  right: 18px;
   background: #357cff;
   border: none;
   color: white;
-  font-size: 10px;
+  font-size: 14px;
   padding: 6px 12px;
   border-radius: 50px;
   cursor: pointer;
-  transition: 0.2s ease;
-  display: flex;
-  justify-content: center;
+  transition: 0.3s;
 }
 
 .dash-arrow:hover {
   background: #0052cc;
 }
 
+/* ================= FULL WIDTH CARD ================= */
 
-.timetable-label{
-  margin-bottom: 15px;
-  transform: scale(1.07);
+.notification-full {
+  grid-column: 1 / -1;
 }
 
-/* Timetable hover text */
-.schedule-text {
-  display: block;
-  font-size: 14px;
-  color: #444;
-  cursor: pointer;
-  margin: 10px 0;
-}
+/* ================= CALENDAR POPUP ================= */
 
-.schedule-text:hover {
-  color: #0056ff;
-  text-decoration: underline;
-}
-
-/* Dialog Background */
-.dialog-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0,0,0,0.4);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 999;
-}
-
-/* Dialog Box */
-.dialog-box {
-  background: white;
-  padding: 20px;
-  width: 380px;
-  border-radius: 10px;
-  animation: popup 0.3s ease;
-}
-
-@keyframes popup {
-  from { opacity: 0; transform: scale(0.85); }
-  to { opacity: 1; transform: scale(1); }
-}
-
-.dialog-label {
-  font-size: 14px;
-  margin-top: 12px;
-  display: block;
-}
-
-.dialog-input {
-  width: 100%;
-  padding: 8px;
-  margin-top: 5px;
-  border-radius: 6px;
-  border: 1px solid #ccc;
-}
-
-.dialog-textarea {
-  width: 100%;
-  height: 80px;
-  margin-top: 5px;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  padding: 8px;
-}
-
-.dialog-save-btn {
-  width: 100%;
-  margin-top: 15px;
-  background: #004ad8;
-  color: white;
-  padding: 10px 0;
-  border-radius: 6px;
-  border: none;
-  cursor: pointer;
-  font-weight: bold;
-}
-
-.dialog-save-btn:hover {
-  background: #0038a8;
-}
 .calendar-overlay {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.25);
+  background: rgba(0, 0, 0, 0.4);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -1583,158 +1552,37 @@ html, body {
 }
 
 .calendar-box {
-  width: 90%;
-  height: 88%;
-  background: #fff;
+  width: 95%;
+  max-width: 1200px;
+  height: 85%;
+  background: white;
   border-radius: 16px;
   padding: 25px;
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
   overflow: hidden;
 }
 
 .calendar-header {
-  font-size: 28px;
+  font-size: 24px;
   font-weight: 700;
   color: #002060;
   margin-bottom: 15px;
 }
-.calendar-border {
-  border: 1px solid #c8c8c8;
-  padding: 15px;
-  border-radius: 6px;
-  background: white;
-  margin-top: 15px;
-}
 
-.title-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 10px;
-}
+/* ================= MANUAL HEADER ================= */
 
-.schedule-btn {
-  background: #0a3d77;
-  color: white;
-  border: none;
-  padding: 8px 18px;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-.manual-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 12px;
-}
-
-.date-text {
-  font-size: 18px;
-  font-weight: bold;
-  margin-right: 14px;
-}
-
-.nav-btn {
-  background: #1c2b3e;
-  color: white;
-  border: none;
-  margin-right: 6px;
-  padding: 5px 10px;
-  border-radius: 4px;
-  cursor: pointer;
-  
-}
-
-.view-btn {
-  background: #dce1e6;
-  color: #000;
-  border: none;
-  padding: 6px 14px;
-  margin-left: 5px;
-  border-radius: 4px;
-}
-
-.view-btn.active,
-.view-btn:hover {
-  background: #112f52;
-  color: white;
-}
-
-.popup-overlay {
-  position: fixed;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(0,0,0,0.5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.popup {
-  width: 620px;
-  background: white;
-  padding: 25px;
-  border-radius: 6px;
-}
-
-.popup-title-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.close-popup {
-  background: none;
-  font-size: 22px;
-  border: none;
-  cursor: pointer;
-}
-
-.popup-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 20px;
-  margin: 15px 0;
-}
-
-.subjects label {
-  margin-right: 20px;
-}
-
-.save-btn {
-  background: #0a3d77;
-  color: white;
-  border: none;
-  padding: 8px 20px;
-  border-radius: 4px;
-  margin-top: 15px;
-  cursor: pointer;
-  
-}
 .manual-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 15px;
-  padding: 8px 0;
-  border-bottom: 1px solid #ddd;
-}
-
-.left-section {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.right-section {
-  display: flex;
-  align-items: center;
+  flex-wrap: wrap;
   gap: 10px;
 }
 
 .date-text {
   font-size: 18px;
-  font-weight: bold;
+  font-weight: 600;
 }
 
 .nav-btn {
@@ -1754,273 +1602,27 @@ html, body {
   cursor: pointer;
 }
 
-.view-btn:hover {
-  background: #1b2a3b;
+.view-btn:hover,
+.view-btn.active {
+  background: #112f52;
   color: white;
 }
 
-.scheduleButton {
-  display: flex;
-  justify-content: flex-end;
-  margin-bottom: -60px;
+/* ================= RESPONSIVE ================= */
 
+@media (max-width: 768px) {
+  .dashboard-wrapper {
+    padding: 20px;
+  }
 
+  .dashboard-title {
+    font-size: 22px;
+  }
+
+  .dashboard-number {
+    font-size: 28px;
+  }
 }
-
-.buttonSchedule {
-  background: #063970;
-  color: white;
-  border: none;
-  padding: 8px 16px;
-  border-radius: 4px;
-  cursor: pointer;
- 
-}
-/* Popup blur background */
-.popup-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.45);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 999;
-}
-
-/* Main popup box */
-.popup-box {
-  width: 600px;
-  background: white;
-  border-radius: 5px;
-  box-shadow: 0 5px 20px rgba(0,0,0,0.2);
-  animation: fadeIn 0.2s ease-in-out;
-}
-
-/* Header */
-.popup-header {
-  background: #063970;
-  padding: 12px 20px;
-  color: white;
-  font-size: 18px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-radius: 5px 5px 0 0;
-}
-
-.close-btn {
-  cursor: pointer;
-  font-size: 20px;
-}
-
-/* Content */
-.popup-content {
-  padding: 20px 25px;
-}
-
-.label-title {
-  font-size: 12px;
-  font-weight: bold;
-  letter-spacing: 1px;
-  color: #555;
-}
-
-.time-row {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 20px;
-}
-
-.desc-box {
-  margin-bottom: 20px;
-}
-
-.checkbox-row {
-  display: flex;
-  gap: 20px;
-  margin-bottom: 25px;
-}
-
-.checkbox-row label {
-  font-size: 14px;
-}
-
-/* Save button */
-.save-row {
-  text-align: center;
-}
-
-.save-btn {
-  background: #063970;
-  color: white;
-  border: none;
-  padding: 8px 25px;
-  border-radius: 4px;
-  cursor: pointer;
-  
-}
-
-.save-btn:hover {
-  background: #022d5c;
-}
-.popup-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0,0,0,0.5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 2000;
-}
-
-.popup-box {
-  width: 550px;
-  background: white;
-  border-radius: 6px;
-  overflow: hidden;
-  animation: fadeIn 0.25s ease-in;
-}
-
-.popup-header {
-  background: #00b4d8;
-  padding: 15px;
-  display: flex;
-  justify-content: space-between;
-  color: white;
-  font-size: 20px;
-}
-
-.popup-close {
-  cursor: pointer;
-  font-size: 22px;
-}
-
-.popup-content {
-  padding: 20px;
-}
-
-.popup-row {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 15px;
-}
-
-.popup-content label {
-  font-weight: bold;
-  font-size: 13px;
-  color: #6c6c6c;
-}
-
-.popup-footer {
-  text-align: center;
-  margin-top: 20px;
-}
-
-.popup-save-btn {
-  background: #0077b6;
-  border: none;
-  padding: 10px 25px;
-  color: white;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-/* BACKDROP */
-.notify-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0,0,0,0.45);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 5000;
-}
-
-/* POPUP BOX */
-.notify-popup {
-  background: white;
-  width: 450px;
-  border-radius: 15px;
-  overflow: hidden;
-  animation: fadeIn 0.2s ease-in-out;
-}
-
-/* HEADER */
-.notify-popup-header {
-  background: #0047AB;
-  padding: 15px 20px;
-  color: white;
-  display: flex;
-  justify-content: center;
-  position: relative;
-}
-
-.notify-close-btn {
-  position: absolute;
-  right: 20px;
-  font-size: 22px;
-  cursor: pointer;
-}
-
-/* CONTENT AREA */
-.notify-popup-content {
-  padding: 18px;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-
-/* EACH CARD */
-.notify-card {
-  display: flex;
-  padding: 14px;
-  border-radius: 12px;
-  border: 1px solid #ddd;
-  background: #ffffff;
-  align-items: flex-start;
-  gap: 14px;
-}
-
-/* LEFT ICON */
-.notify-icon {
-  width: 22px;
-  height: 22px;
-  border-radius: 5px;
-}
-
-/* TEXT AREA */
-.notify-text {
-  flex: 1;
-}
-
-.notify-title {
-  font-weight: bold;
-  margin-bottom: 5px;
-  font-size: 15px;
-}
-
-.notify-body {
-  font-size: 14px;
-  color: #555;
-}
-
-/* FADE ANIMATION */
-@keyframes fadeIn {
-  from { opacity: 0; transform: scale(0.95); }
-  to { opacity: 1; transform: scale(1); }
-}
-
-
-
 
 
 
@@ -9419,4 +9021,166 @@ textarea {
 @keyframes scaleIn {
   from { transform: scale(0.95); opacity: 0; }
   to { transform: scale(1); opacity: 1; }
+}
+
+
+/* =========================Metting romm.csss==================== */
+
+
+/* 🌍 GLOBAL */
+body {
+  margin: 0;
+  font-family: "Segoe UI", sans-serif;
+  /* background: #0f172a; */
+}
+
+/* 🌍 MAIN CONTAINER */
+.meeting {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: radial-gradient(circle at top, #1e293b, #020617);
+  color: white;
+}
+
+/* 🔝 HEADER */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 25px;
+  font-size: 18px;
+  font-weight: 600;
+  background: rgba(30, 41, 59, 0.8);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+/* 🎥 VIDEO GRID */
+.video-grid {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 300px));
+  gap: 25px;
+  justify-content: center;
+  align-content: center;
+  padding: 30px;
+}
+
+/* 📦 VIDEO CARD */
+.video-card {
+  position: relative;
+  background: rgba(30, 41, 59, 0.6);
+  border-radius: 20px;
+  overflow: hidden;
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,255,255,0.08);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.video-card:hover {
+  transform: translateY(-5px) scale(1.02);
+  box-shadow: 0 15px 40px rgba(0,0,0,0.9);
+}
+
+/* 🎬 VIDEO */
+.video-card video {
+  width: 100%;
+  height: 220px;
+  object-fit: cover;
+  background: black;
+}
+
+/* 👤 LABEL */
+.video-card p {
+  position: absolute;
+  bottom: 8px;
+  left: 10px;
+  font-size: 13px;
+  padding: 4px 10px;
+  border-radius: 10px;
+  background: rgba(0,0,0,0.6);
+}
+
+/* ❌ NO USER TEXT */
+.video-grid p {
+  text-align: center;
+  font-size: 18px;
+  color: #94a3b8;
+}
+
+/* 🎛 CONTROLS BAR (ZOOM STYLE) */
+.controls {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(30, 41, 59, 0.9);
+  padding: 12px 20px;
+  border-radius: 50px;
+  display: flex;
+  gap: 15px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.7);
+  backdrop-filter: blur(10px);
+}
+
+/* 🔘 BUTTON */
+.btn {
+  padding: 10px 18px;
+  border-radius: 30px;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  background: #334155;
+  color: white;
+  transition: all 0.25s ease;
+}
+
+/* 🎯 HOVER EFFECT */
+.btn:hover {
+  transform: scale(1.1);
+  background: #475569;
+}
+
+/* ▶ START */
+.btn.start {
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+}
+
+.btn.start:hover {
+  background: linear-gradient(135deg, #16a34a, #15803d);
+}
+
+/* 🔇 MUTE / VIDEO */
+.btn:nth-child(2),
+.btn:nth-child(3) {
+  background: #475569;
+}
+
+/* ❌ EXIT */
+.btn.exit {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+}
+
+.btn.exit:hover {
+  background: linear-gradient(135deg, #dc2626, #b91c1c);
+}
+
+/* 📱 RESPONSIVE */
+@media (max-width: 768px) {
+  .video-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .controls {
+    bottom: 10px;
+    gap: 10px;
+  }
+
+  .btn {
+    padding: 8px 12px;
+    font-size: 12px;
+  }
 }

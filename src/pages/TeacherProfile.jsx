@@ -88,7 +88,7 @@ export default function TeacherProfile() {
       loadTeacher();
 
     } catch {
-      alert("Upload failed");
+      showError("Upload failed");
     } finally {
       setLoading(false);
     }
@@ -107,7 +107,7 @@ export default function TeacherProfile() {
       setPreviewImage(null);
 
     } catch {
-      alert("Remove failed");
+      showError("Remove failed");
     }
   };
 

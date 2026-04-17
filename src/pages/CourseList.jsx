@@ -96,9 +96,9 @@ export default function CourseList() {
           <div className="title-row">
             <h2 className="course-title">Courses</h2>
 
-            <button className="add-course-btn" onClick={() => setShowDialog(true)}>
+            {/* <button className="add-course-btn" onClick={() => setShowDialog(true)}>
               + Add Course
-            </button>
+            </button> */}
           </div>
 
           {/* COURSE CARDS */}

@@ -37,7 +37,7 @@ export default function ChatWidget({ userId = 1 }) {
       setText("");
     } catch (err) {
       console.error("POST API failed", err);
-      alert("Message send failed");
+      showError("Message send failed");
     }
   }
 

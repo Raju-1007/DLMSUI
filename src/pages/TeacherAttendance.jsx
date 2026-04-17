@@ -5,6 +5,8 @@ import Footer from "../components/Footer";
 import axios from "axios";
 import { useMessage } from "../context/MessageContext";
 import { useSelector } from "react-redux";
+import BackButton from "../components/BackButton";
+
 
 export default function TeacherAttendance() {
 
@@ -107,7 +109,7 @@ export default function TeacherAttendance() {
         <Sidebar />
 
         <div className="teacher-main">
-
+             <BackButton />
           <div className="ta-header">
             <h2>Attendance Tracker</h2>
             {teacherProfile && (

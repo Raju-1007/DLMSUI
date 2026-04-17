@@ -16,6 +16,7 @@ export default function ReceiveNotifications() {
   const [notifications, setNotifications] = useState([]);
   const [teacherSpecific, setTeacherSpecific] = useState([]);
   const [teacherTimeTable, setTeacherTimeTable] = useState([]);
+  const[studentNotificationTimeTable,setStudentNotificationTimeTable]=useState([])
   const[data,setData]=useState("");
   const [teacherMeta, setTeacherMeta] = useState({
     className: "",
@@ -34,6 +35,7 @@ export default function ReceiveNotifications() {
       const teacherRes = await axios.get(
         `${import.meta.env.VITE_API_BASE_URL}/login/login/teacher/profile/${login?.userDetails?.loginid}`
       );
+    
 
       const profile = teacherRes.data;
       setData(profile);
@@ -43,17 +45,16 @@ export default function ReceiveNotifications() {
         className: profile.className,
         subjectName: profile.subjectName
       });
-
+   
       const timetableRes = await axios.get(
         `${import.meta.env.VITE_API_BASE_URL}/content/teachertimeTableDetails`
       );
-
-      const filtered = timetableRes.data.filter(
+      
+      const filtered = timetableRes.data.content.filter(
         (t) =>
           t.classId === profile.classId &&
           t.subjectId === profile.subjectId
       );
-
       setTeacherTimeTable(filtered);
 
     } catch {
@@ -79,10 +80,18 @@ export default function ReceiveNotifications() {
             teacherId: login?.userDetails?.loginid
           }
         }
+        
       );
 
-      setNotifications(general.data || []);
-      setTeacherSpecific(specific.data || []);
+      const studentNotiFications= await axios.get(`${import.meta.env.VITE_API_BASE_URL}/notify/api/studentNotificationsDetails`,{
+          params:{
+            teacherId:login?.userDetails?.loginid
+             
+          }
+      })
+     setStudentNotificationTimeTable(studentNotiFications.data);
+      setNotifications(general.data.content || []);
+      setTeacherSpecific(specific.data.content|| []);
 
     } catch (err) {
       console.error(err);
@@ -165,6 +174,32 @@ export default function ReceiveNotifications() {
               ))}
             </div>
           )}
+
+         <h2 className="rn-title">Student  Notifications</h2>
+          {studentNotificationTimeTable.length === 0 ? (
+            <p>No notifications</p>
+          ) : (
+            <div className="rn-list">
+              {studentNotificationTimeTable.map((n, index) => (
+                <div key={index} className="rn-card">
+                  <div className="rn-card-header">
+                    <span className="rn-role">{n.className || "ADMIN"}</span>
+                    <span className="rn-date">{n.date}</span>
+                  </div>
+
+                  
+                  <p className="rn-message">{n.startTime}</p>
+                   <p className="rn-message">{n.endTime}</p>
+
+                  <span className="rn-badge">{n.description}</span>
+                    <span className="rn-badge">  <a href={n.meetingLink} target="_blank" rel="noopener noreferrer">
+                        Join Meeting
+                      </a></span>
+                </div>
+              ))}
+            </div>
+          )}
+
 
         </div>
       </div>

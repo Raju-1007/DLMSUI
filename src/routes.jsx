@@ -65,8 +65,13 @@ import UpdateProfile from './pages/UpdateProfile'
 import TeacherUpdateProfile from './pages/TeacherUpdateProfile'
 import StudentTimeTable from './pages/StudentTimeTable'
 import AdminApproval from './pages/AdminApproval'
+import MeetingRoom from './components/MeetingRoom'
+import Layout from './Layout '
 
 export const router = createBrowserRouter([
+  {
+     element: "",
+      children: [
   { path: '/', element: <Login /> },
   { path: '/register', element: <Register /> },
   { path: '/dashboard', element: <Dashboard /> },
@@ -153,7 +158,10 @@ export const router = createBrowserRouter([
   { path: '/teacherupdateProfile', element: <TeacherUpdateProfile /> },
 
   { path: '/studenttimeTable', element: <StudentTimeTable /> },
-  { path: '/adminApproval', element: <AdminApproval /> }
+  { path: '/adminApproval', element: <AdminApproval /> },
+  {path:"/meeting/:meetingId" ,element: <MeetingRoom /> }
+      ]
+    }
 
 
 ])

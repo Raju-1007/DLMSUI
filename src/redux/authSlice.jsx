@@ -3,17 +3,25 @@ import axios from "axios";
 
 export const loginUserThunk = createAsyncThunk(
   "auth/loginUserThunk",
-  async (payload,{ rejectWithValue }) => {
-    const res = await axios.post(
-      import.meta.env.VITE_API_BASE_URL+"/login/getloginData",
-      payload
-    );
-     if (res.data.status === "error") {
+  async (payload, { rejectWithValue }) => {
+    try {
+      const res = await axios.post(
+        import.meta.env.VITE_API_BASE_URL + "/login/getloginData",
+        payload
+      );
+
+      if (res.data.status === "error" || res.data.status === error) {
+
+        console.log(res.data, ":::::::::::::::::::::::::::::::::::::error handling in AuthSlice:::::::::::::::::::::::::::::::");
         return rejectWithValue(res.data.message);
       }
-       localStorage.setItem("loginDetails", JSON.stringify(res.data));
 
-    return res.data;
+      localStorage.setItem("loginDetails", JSON.stringify(res.data));
+
+      return res.data;
+    }
+       catch (err) { return rejectWithValue( err.response?.data?.message || "Server Error" );
+      }
   }
 );
 
@@ -27,7 +35,7 @@ const authSlice = createSlice({
     role: savedLogin?.role || null,
     loginId: savedLogin?.loginId || null,
     adhaar: savedLogin?.adhaar || null,
-    token:savedLogin?.token ||  null,
+    token: savedLogin?.token || null,
     loading: false
   },
 
@@ -44,7 +52,7 @@ const authSlice = createSlice({
         state.role = action.payload.role;
         state.loginId = action.payload.loginId;
         state.adhaar = action.payload.adhaar;
-        state.token=action.payload.token;
+        state.token = action.payload.token;
 
         // ✅ SAVE PERMANENTLY
         localStorage.setItem(
@@ -54,9 +62,10 @@ const authSlice = createSlice({
       })
       .addCase(loginUserThunk.rejected, (state, action) => {
         state.loading = false;
-       alert("LOGIN FAILED:", action.error);
+        showError("LOGIN FAILED:", action.error);
       });
   },
 });
 
 export default authSlice.reducer;
+ 

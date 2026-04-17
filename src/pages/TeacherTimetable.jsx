@@ -56,7 +56,7 @@ export default function TeacherTimetable() {
   const teacherMeta = state?.teacherMeta;
   const teacherdata = state?.timetable
 
-  console.log(teacherMeta, ":::::::::::::::::teacherMeta::::::::::::::::", teacherdata);
+ 
 
 
   const [events, setEvents] = useState([]);
@@ -158,8 +158,7 @@ export default function TeacherTimetable() {
 
     };
 
-    console.log("FINAL PAYLOAD 👉", payload);
-
+    
     try {
       await axios.post(
         `${import.meta.env.VITE_API_BASE_URL}/notify/api/addStudentMeetings`,

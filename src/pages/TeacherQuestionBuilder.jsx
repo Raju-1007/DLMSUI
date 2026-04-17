@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import Sidebar from "../components/Sidebar";
 import Navbar from "../components/Navbar";
-import { useLocation, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { useMessage } from "../context/MessageContext";
 
@@ -12,12 +12,13 @@ export default function TeacherQuestionBuilder() {
   const { getstudentId } = useParams();
   const { state } = useLocation();
 
-  console.log("Received Data prepare Questions:", state);
-
+ 
   const assignmentId = state?.assignmentId;   // from previous page
   const classId = state?.classId;
   const subjectId = state?.subjectId;
-
+  let  startDateTime=state?.startDate;
+  let endDateTime=state?.endDate;
+   const navigator = useNavigate();
   const [questions, setQuestions] = useState([]);
 
   const [form, setForm] = useState({
@@ -64,6 +65,9 @@ export default function TeacherQuestionBuilder() {
         {
           teacherId: loginDetails?.userDetails?.loginid,
           subjectId: subjectId,
+          startDateTime:startDateTime,
+          endDateTime:endDateTime,
+
 
           classes: {
             class_id: classId
@@ -83,7 +87,8 @@ export default function TeacherQuestionBuilder() {
       );
 
       showSuccess("Question added successfully");
-
+      navigator("/teacher/assignments")
+ 
       setForm({
         prompt: "",
         optionA: "",
@@ -96,10 +101,12 @@ export default function TeacherQuestionBuilder() {
       loadQuestions();
 
     } catch (err) {
-      console.log(err);
+      console.log(err,"falied to add question ");
       showError("Failed to add question");
     }
   };
+
+ 
 
   return (
     <div className="app-layout">

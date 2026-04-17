@@ -11,6 +11,7 @@ import Sidebar from "../components/Sidebar";
 import { useMessage } from "../context/MessageContext";
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
+import BackButton from "../components/BackButton";
 
 const localizer = dayjsLocalizer(dayjs);
 
@@ -77,6 +78,7 @@ export default function TeacherAssignments() {
         const res = await axios.get(
           `${import.meta.env.VITE_API_BASE_URL}/login/login/teacher/profile/${login?.userDetails?.loginid}`
         );
+        console.log(res,":::::::::::::");
         setTeacherProfile(res.data);
       } catch {
         showError("Failed to load teacher profile");
@@ -115,17 +117,18 @@ export default function TeacherAssignments() {
       const startDateTime = dayjs(
   `${scheduleData.date} ${scheduleData.startTime}`
 ).toISOString();
-
+ 
 const endDateTime = dayjs(
   `${scheduleData.date} ${scheduleData.endTime}`
 ).toISOString();
 
+   
 
       const duration = dayjs(endDateTime).diff(
         dayjs(startDateTime),
         "minute"
       ) + " minutes";
-
+   
       const payload = {
         teacherId: login?.userDetails?.loginid,
         subjectId: teacherProfile?.subjectId,
@@ -140,13 +143,14 @@ const endDateTime = dayjs(
         endDate: endDateTime,
         duration: duration,
       };
-     
+      
       const res = await axios.post(
         `${import.meta.env.VITE_API_BASE_URL}/notify/api/addAssignmentsStudemts`,
         payload
       );
 
       const savedAssignment = res.data;
+      console.log(savedAssignment,"::::savedAssignment::::::::::::::::::");
 
       showSuccess("Assignment Scheduled Successfully");
       setShowSchedulePopup(false);
@@ -158,6 +162,8 @@ const endDateTime = dayjs(
           classId: teacherProfile?.classId,
           subjectId: teacherProfile?.subjectId,
           teacherId: login?.userDetails?.loginid,
+          startDate:  savedAssignment.startDate,
+          endDate:savedAssignment.endDate
         },
       });
     } catch (error) {
@@ -172,6 +178,7 @@ const endDateTime = dayjs(
         <Sidebar />
 
         <div className="tt-wrapper">
+          <BackButton />
           <div className="tt-top-row">
             <h2 className="tt-page-title">Assignments</h2>
             <button

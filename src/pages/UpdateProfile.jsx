@@ -133,7 +133,7 @@ export default function UpdateProfile() {
       }
     );
 
-    alert("Profile updated successfully");
+    showError("Profile updated successfully");
     nav("/dashboard");
   };
 

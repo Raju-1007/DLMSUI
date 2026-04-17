@@ -2,7 +2,7 @@ import axios from "axios";
 import get from "lodash/get";
 
 
-/* ================= REQUEST INTERCEPTOR ================= */
+
 
 const PUBLIC_APIS = [
   "/login/getloginData",
@@ -48,8 +48,6 @@ axios.interceptors.response.use(
    
 
     const originalConfig = error.config;
-     console.log(error, "::::::::::::::inside error");
-    
     
 
     if (error.response?.status === 401 && !originalConfig?._retry &&!PUBLIC_APIS.some(url => originalRequest.url?.includes(url)) ){
@@ -58,24 +56,22 @@ axios.interceptors.response.use(
       try {
         const parsedData = JSON.parse(localStorage.getItem("loginDetails"));
 
-        console.log(parsedData, "::::::::::::::::::::::::: parsedData ::::::::");
-
         if (!parsedData.userDetails?.token) throw new Error("No token");
 
-        // 🔄 Call refresh token API
+      
         const res = await axios.get(
           `${import.meta.env.VITE_API_BASE_URL}/login/refresh`,
           {
             headers: {
-              Authorization: `Bearer ${parsedData.token}`
+              Authorization: `Bearer ${parsedData.userDetails?.token}`
             }
           }
         );
-
+      console.log(res, "::::::::::::::refresh response");
         const newToken = rs?.data?.data?.token;
 
         if (newToken) {
-          parsedData.token = newToken;
+          parsedData.userDetails.token = newToken;
           localStorage.setItem(
             "loginDetails",
             JSON.stringify(parsedData)
@@ -91,7 +87,7 @@ axios.interceptors.response.use(
 
       } catch (err) {
         localStorage.clear();
-         alert("Session expired. Please login again.");
+         showError("Session expired. Please login again.");
         window.location.href = "/";
         return Promise.reject(err);
       }

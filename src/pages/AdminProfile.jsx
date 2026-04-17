@@ -93,7 +93,7 @@ export default function AdminProfile() {
       );
       loadProfileImage();
     } catch {
-      alert("Upload failed");
+      showError("Upload failed");
     }
   };
 
@@ -111,7 +111,7 @@ export default function AdminProfile() {
       );
       setPreviewImage(null);
     } catch {
-      alert("Remove failed");
+      showError("Remove failed");
     }
   };
 

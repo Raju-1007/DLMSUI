@@ -3,16 +3,8 @@
 import React, { useEffect, useState } from "react";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
-import ChatWidget from "../components/ChatWidget";
+
 import axios from "axios";
-
-
-
-import FullCalendar from "@fullcalendar/react";
-import dayGridPlugin from "@fullcalendar/daygrid";
-import timeGridPlugin from "@fullcalendar/timegrid";
-import interactionPlugin from "@fullcalendar/interaction";
-import listPlugin from "@fullcalendar/list";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 
@@ -98,26 +90,8 @@ useEffect(() => {
     }
   };
 
-  // ========== LOAD ALL TIMETABLE EVENTS ==========
-  // const loadTimetable = async () => {
-  //   try {
-  //     const res = await axios.get(import.meta.env.VITE_API_BASE_URL+"/api/timetable/all");
-      
-  //     // Convert backend data → FullCalendar events
-  //     const formatted = res.data.map((t) => ({
-  //       title: t.title,
-  //       start: `${t.date}T${t.startTime}`,
-  //       end: `${t.date}T${t.endTime}`,
-  //       backgroundColor: "#06b6d4",
-  //       borderColor: "#06b6d4",
-  //       textColor: "#fff",
-  //     }));
 
-  //     setEvents(formatted);
-  //   } catch (error) {
-  //    showError("Error loading timetable:", error);
-  //   }
-  // };
+  
  const openTimeTableScreen=()=>{
   setSechuduleShowPopup(true);
     setShowCalendar(false); 
@@ -221,7 +195,7 @@ useEffect(() => {
               className="dashboard-card timetable-card">
               
               <h3>My Timetable</h3><br></br>
-              <span className="status-text">Hover here to view schedule</span>
+              <span className="status-text3">Hover here to view schedule</span>
                <button className="dash-arrow" onClick={navigateMyTimeTable}>➜</button>
             </div>
 

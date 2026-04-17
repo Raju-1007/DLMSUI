@@ -6,10 +6,12 @@ import { useSelector } from "react-redux";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 import SearchableDropdown from "../components/SearchableDropdown";
+import { useMessage } from "../context/MessageContext";
 
 export default function TeacherUpdateProfile() {
   const nav = useNavigate();
   const loginDetails = useSelector((state) => state.auth.user);
+  const{showError, showSuccess}=useMessage();
 
   const [formData, setFormData] = useState({
     district: null,
@@ -114,7 +116,9 @@ export default function TeacherUpdateProfile() {
       : 'Admin123'
 
     };
-
+   if(payload.techerServiceId){
+       await verfiyTeacherServiceId(payload.techerServiceId);
+   }
     await axios.post(
       "http://localhost:8080/login/teacher-update-profile",
       payload,
@@ -126,12 +130,29 @@ export default function TeacherUpdateProfile() {
       }
     );
 
-    alert("Profile updated successfully");
+    showError("Profile updated successfully");
     if(loginDetails?.userDetails?.role === "TEACHER"){
     nav("/teacher/dashboard");
     }
     else{
       nav("/admin/dashboard");
+    }
+  };
+
+  const verfiyTeacherServiceId = async (serviceId) => {
+    console.log("Verifying Teacher Service ID:", serviceId);
+    try {
+     const res = await axios.get(
+             `${import.meta.env.VITE_API_BASE_URL}/content/teacherByServiceId/${serviceId}`
+           );
+     
+      if (!res.data) {
+        showError("Invalid Teacher Service ID");
+        throw new Error("Invalid Teacher Service ID");
+      }     
+    } catch (error) {
+      showError("Error verifying Teacher Service ID");
+      throw error;
     }
   };
 

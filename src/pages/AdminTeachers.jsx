@@ -142,7 +142,7 @@ export default function AdminTeachers() {
 
   // ✅ basic validation
   if (!form.district || !form.mandal || !form.village || !form.school) {
-    alert("Please select District, Mandal, Village and School");
+    showError("Please select District, Mandal, Village and School");
     return;
   }
 
@@ -173,12 +173,12 @@ export default function AdminTeachers() {
       }
     );
 
-    alert("Teacher assigned successfully");
+    showError("Teacher assigned successfully");
     setShowPopup(false);
 
   } catch (err) {
     console.error("Save failed", err);
-    alert("Failed to save assignment");
+    showError("Failed to save assignment");
   }
 };
 

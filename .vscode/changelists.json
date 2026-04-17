@@ -1,0 +1,46 @@
+{
+  "changelists": [
+    {
+      "name": "Default",
+      "files": [
+        "components/ChatWidget.jsx",
+        "package.json",
+        "src/components/ChatWidget.jsx",
+        "src/components/LoginActivity.jsx",
+        "src/components/Navbar.jsx",
+        "src/components/Sidebar.jsx",
+        "src/lib/auth.js",
+        "src/pages/AdminProfile.jsx",
+        "src/pages/AdminTeachers.jsx",
+        "src/pages/CourseList.jsx",
+        "src/pages/Dashboard.jsx",
+        "src/pages/Login.jsx",
+        "src/pages/QuizPage.jsx",
+        "src/pages/ReceiveNotifications.jsx",
+        "src/pages/StudentTimeTable.jsx",
+        "src/pages/TeacherAssignments.jsx",
+        "src/pages/TeacherAttendance.jsx",
+        "src/pages/TeacherProfile.jsx",
+        "src/pages/TeacherQuestionBuilder.jsx",
+        "src/pages/TeacherTimetable.jsx",
+        "src/pages/TeacherUpdateProfile.jsx",
+        "src/pages/UpdateProfile.jsx",
+        "src/redux/authSlice.jsx",
+        "src/redux/axiosSetup.jsx",
+        "src/routes.jsx",
+        "src/styles/theme.css",
+        "vite.config.ts",
+        "Backend/Server.js",
+        "Backend/package-lock.json",
+        "Backend/package.json",
+        "package-lock.json",
+        "\"src/Layout .jsx\"",
+        "src/components/BackButton.jsx",
+        "src/components/MeetingRoom.jsx",
+        "src/services/websocket.js",
+        ".vscode/changelists.json"
+      ]
+    }
+  ],
+  "active": "Default"
+}
