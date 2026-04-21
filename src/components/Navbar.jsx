@@ -25,9 +25,7 @@ export default function Navbar() {
     const { showError, showSuccess } = useMessage();
   
     const [profileValid, setProfileValid] = useState(null);
-  
-    /* ================= PROFILE VALIDATION ================= */
-  
+
     useEffect(() => {
       const checkProfile = async () => {
         let res;
@@ -42,7 +40,6 @@ export default function Navbar() {
              res = await getDepartmentUpdatePropfileDetails(login,  showSuccess, showError);
            
           }
-          console.log("Profile Validity Response  navbar:", res);
           if (res) {
            const isValid =
           res !== null ||
@@ -56,7 +53,6 @@ export default function Navbar() {
           }
          
         } catch (err) {
-          console.log("Error checking profile validity:", err);
           setProfileValid(false);
         }
       };
@@ -115,7 +111,7 @@ export default function Navbar() {
       }
     );
   } catch (err) {
-    console.log(err, "handleLogoutActivity error");
+     showError(err);
   }
 };
 

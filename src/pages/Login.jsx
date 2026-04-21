@@ -79,100 +79,104 @@ export default function Login() {
 
   /* ================= LOGIN ================= */
   const doLogin = async () => {
-    if (!password) return showError("Please enter valid password");
-    // STUDENT LOGIN
+    if (!password) return showError("Please enter password");
+
+    let payload ={};
+
+    // ✅ STUDENT LOGIN
     if (loginType === "student") {
-      if (!studentId) return showError("Please enterr valid student ID");
+      if (!studentId) return showError("Please enter valid student ID");
 
-      dispatch(
-        loginUserThunk({
-          role: "STUDENT",
-          password,
-          loginid: studentId,
-          captchaId,
-          captchaInput,
-        })
-      )
-        .unwrap()
-        .then((res) => {
 
-          if (res?.message === "Invalid Password" || res?.message === "Invalid Captcha" || res === "User not found") {
-            showError(res.message);
-            return;
-          }
-          showSuccess(res.message);
-          loginMock("STUDENT");
-          getStudentUpdatePropfileDetails(res, showSuccess, showError).then((data) => {
-            if (data == "null" && !data && data !== "Details Existed" && data !== "undefined") {
+payload = {
+  role: "STUDENT",
+  password,
+  loginid: studentId,
+  captchaId,
+  captchaInput,
+};
 
-              nav("/updateProfile");
-            }
-            else {
-              nav("/dashboard");
-            }
-          });
-        })
-        .catch(() =>
 
-          showError("Login failed"),
-        );
     }
 
-    // DEPARTMENT LOGIN
+    // ✅ DEPARTMENT LOGIN
     if (loginType === "department") {
       if (!role) return showError("Select role");
-      // if (!/^\d{12}$/.test(adhaarValue))
-      //   return showError("Aadhaar must be 12 digits");
       if (!departmentId) return showError("Login ID not generated");
       if (!/^\d{4}$/.test(captchaInput))
         return showError("Captcha must be 4 digits");
 
-      dispatch(
-        loginUserThunk({
-          role,
-          loginid: departmentId,
-          password,
-          captchaId,
-          captchaInput,
+    
+payload = {
+  role,
+  loginid: departmentId,
+  password,
+  captchaId,
+  captchaInput,
+};
 
-        })
-      )
-        .unwrap()
-        .then((res) => {
 
-          if (res?.message === "Invalid Password" || res?.message === "Invalid Captcha" || res === "User not found") {
-            showError(res.message);
-            return;
-          }
-          else {
-            loginMock(role);
+    }
 
-            // call once
-            LoginActivity(res, showSuccess, showError);
+    try {
+      // 🔥 API CALL
+      const res = await dispatch(loginUserThunk(payload)).unwrap();
 
-            getDepartmentUpdatePropfileDetails(res, showSuccess, showError).then((tedata) => {
-              const userRole = res?.userDetails?.role;
+      
+showSuccess(res?.message || "Login Success");
 
-              const routes = {
-                ADMIN: "/admin/dashboard",
-                SUPER_ADMIN: "/SuperAdminDashboard",
-                TEACHER: "/teacher/dashboard"
-              };
+// 🔥 STUDENT FLOW
+if (loginType === "student") {
+  loginMock("STUDENT");
 
-              const navigateTo = tedata
-                ? routes[userRole] || routes.TEACHER
-                : "/teacherupdateProfile";
+  const data = await getStudentUpdatePropfileDetails(
+    res,
+    showSuccess,
+    showError
+  );
 
-              nav(navigateTo);
+  if (!data || data === "null" || data === "undefined") {
+    nav("/updateProfile");
+  } else {
+    nav("/dashboard");
+  }
+}
 
-            })
-          }
-        })
-        .catch((err) => {
-          showError(" InValid Crendtials")
-        });
+// 🔥 DEPARTMENT FLOW
+if (loginType === "department") {
+  loginMock(role);
+
+  LoginActivity(res, showSuccess, showError);
+
+  const tedata = await getDepartmentUpdatePropfileDetails(
+    res,
+    showSuccess,
+    showError
+  );
+
+  const userRole = res?.userDetails?.role;
+
+  const routes = {
+    ADMIN: "/admin/dashboard",
+    SUPER_ADMIN: "/SuperAdminDashboard",
+    TEACHER: "/teacher/dashboard",
+  };
+
+  const navigateTo = tedata
+    ? routes[userRole] || routes.TEACHER
+    : "/teacherupdateProfile";
+
+  nav(navigateTo);
+}
+
+
+    } catch (err) {
+      // 🔥 REAL ERROR HANDLING
+       showError(err);
+      
     }
   };
+
 
   const getLoginIdLabel = () => {
     if (!role) return "";
