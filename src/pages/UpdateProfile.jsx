@@ -6,10 +6,12 @@ import { useSelector } from "react-redux";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 import SearchableDropdown from "../components/SearchableDropdown";
+import { useMessage } from "../context/MessageContext";
 
 export default function UpdateProfile() {
   const nav = useNavigate();
   const loginDetails = useSelector((state) => state.auth.user);
+    const { showSuccess, showError } = useMessage();
 
   const [formData, setFormData] = useState({
     district: null,

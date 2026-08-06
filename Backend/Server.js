@@ -1,160 +1,129 @@
 const express = require("express");
 const http = require("http");
 const { Server } = require("socket.io");
-const mediasoup = require("mediasoup");
 
 const app = express();
 const server = http.createServer(app);
 
 const io = new Server(server, {
-  cors: { origin: "*" }
+  cors: { origin: "*" },
 });
 
-let worker, router;
-let producer;
-const transports = {};
-const producers = {};
+/** meetingId -> Map<userId, { socketId, userName, role }> */
+const rooms = new Map();
 
+function getRoomParticipants(meetingId) {
+  const room = rooms.get(meetingId);
+  if (!room) return [];
+  return Array.from(room.entries()).map(([userId, meta]) => ({
+    userId,
+    userName: meta.userName,
+    role: meta.role,
+  }));
+}
 
-(async () => {
-  worker = await mediasoup.createWorker();
+function findTeacherUserId(meetingId) {
+  const participants = getRoomParticipants(meetingId);
+  const teacher = participants.find((p) => p.role === "TEACHER");
+  return teacher ? teacher.userId : null;
+}
 
-  router = await worker.createRouter({
-    mediaCodecs: [
-      {
-        kind: "video",
-        mimeType: "video/VP8",
-        clockRate: 90000
-      }
-    ]
-  });
+function removeParticipant(meetingId, userId) {
+  const room = rooms.get(meetingId);
+  if (!room) return;
+  room.delete(userId);
+  if (room.size === 0) {
+    rooms.delete(meetingId);
+  }
+}
 
-  console.log("🔥 SFU Ready");
-})();
+io.on("connection", (socket) => {
+  let currentMeetingId = null;
+  let currentUserId = null;
 
-io.on("connection", socket => {
-  console.log("✅ CONNECTED::::::::::::::::::::::::", socket.id);
-
-  // =====================
-  // RTP
-  // =====================
-  socket.on("getRtpCapabilities", cb => {
-    console.log("📡 RTP REQUEST :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::");
-    cb(router.rtpCapabilities);
-  });
-
-  // =====================
-  // CREATE TRANSPORT
-  // =====================
-  socket.on("createTransport", async cb => {
-
-    const transport = await router.createWebRtcTransport({
-      listenIps: [{ ip: "0.0.0.0", announcedIp: null }],
-      enableUdp: true,
-      enableTcp: true,
-    });
-
-    transports[socket.id] = transport;
-
-    console.log(":::::::::::::::::::::::::::::::::🚀 TRANSPORT CREATED");
-
-    cb({
-      id: transport.id,
-      iceParameters: transport.iceParameters,
-      iceCandidates: transport.iceCandidates,
-      dtlsParameters: transport.dtlsParameters
-    });
-
-  });
-
-  // =====================
-  // CONNECT TRANSPORT
-  // =====================
-  socket.on("connectTransport", async ({ dtlsParameters }) => {
-
-    const transport = transports[socket.id];
-
-    if (!transport || transport.connected) return;
-
-    if (transport.connected) {
-      console.log("⚠ Already connected");
+  socket.on("join-room", ({ meetingId, userId, userName, role }, callback) => {
+    if (!meetingId || !userId) {
+      callback?.({ error: "meetingId and userId are required" });
       return;
     }
 
-    await transport.connect({ dtlsParameters });
+    currentMeetingId = meetingId;
+    currentUserId = userId;
 
-    transport.connected = true;
-
-    console.log("✅ TRANSPORT CONNECTED");
-
-  });
-
-  // =====================
-  // PRODUCE (TEACHER)
-  // =====================
-  socket.on("produce", async ({ kind, rtpParameters }, cb) => {
-
-    const transport = transports[socket.id];
-
-    producer = await transport.produce({
-      kind,
-      rtpParameters
-    });
-    if (!producers[socket.id]) {
-  producers[socket.id] = producer;
-
-  socket.broadcast.emit("newProducer", {
-    producerSocketId: socket.id
-  });
-}
-
-    cb({ id: producer.id });
-
-  });
-
-  // =====================
-  // CONSUME (STUDENT)
-  // =====================
-  socket.on("consume", async ({ rtpCapabilities, producerSocketId }, cb) => {
-
-     
-
-     const producer = producers[producerSocketId]; 
-
-    if (!producer) {
-      console.log("❌ NO PRODUCER");
-      return cb({ error: "No producer" });
+    if (!rooms.has(meetingId)) {
+      rooms.set(meetingId, new Map());
     }
 
-    const transport = await router.createWebRtcTransport({
-      listenIps: [{ ip: "0.0.0.0", announcedIp: null }],
-      enableUdp: true,
-      enableTcp: true,
+    rooms.get(meetingId).set(userId, {
+      socketId: socket.id,
+      userName: userName || userId,
+      role: role || "STUDENT",
     });
 
-//     socket.on("connectTransport", async ({ dtlsParameters }) => {
-//   await transport.connect({ dtlsParameters });
-// });
+    socket.join(meetingId);
 
-    const consumer = await transport.consume({
-      producerId: producer.id,
-      rtpCapabilities,
-      paused: false
+    const participants = getRoomParticipants(meetingId);
+    const teacherUserId = findTeacherUserId(meetingId);
+
+    callback?.({ participants, teacherUserId });
+
+    socket.to(meetingId).emit("user-joined", {
+      userId,
+      userName: userName || userId,
+      role: role || "STUDENT",
+      participants,
+      teacherUserId,
     });
 
-    console.log("👨‍🎓 CONSUMER CREATED");
-
-    cb({
-      id: consumer.id,
-      producerId: producer.id,
-      kind: consumer.kind,
-      rtpParameters: consumer.rtpParameters
-    });
-
+    console.log(`JOIN room=${meetingId} user=${userId} role=${role}`);
   });
 
+  socket.on("signal", ({ meetingId, toUserId, fromUserId, type, sdp, candidate }) => {
+    if (!meetingId || !toUserId) return;
+
+    const room = rooms.get(meetingId);
+    const target = room?.get(toUserId);
+    if (!target) {
+      console.log(`No target socket for user ${toUserId}`);
+      return;
+    }
+
+    io.to(target.socketId).emit("signal", {
+      meetingId,
+      fromUserId,
+      toUserId,
+      type,
+      sdp,
+      candidate,
+    });
+  });
+
+  socket.on("leave-room", ({ meetingId, userId }) => {
+    if (!meetingId || !userId) return;
+
+    removeParticipant(meetingId, userId);
+    socket.leave(meetingId);
+
+    socket.to(meetingId).emit("user-left", {
+      userId,
+      participants: getRoomParticipants(meetingId),
+    });
+
+    console.log(`LEAVE room=${meetingId} user=${userId}`);
+  });
+
+  socket.on("disconnect", () => {
+    if (currentMeetingId && currentUserId) {
+      removeParticipant(currentMeetingId, currentUserId);
+      socket.to(currentMeetingId).emit("user-left", {
+        userId: currentUserId,
+        participants: getRoomParticipants(currentMeetingId),
+      });
+    }
+  });
 });
 
-server.listen(3001, () =>
-  console.log("🚀 Video server running on 3001")
-);
+const PORT = process.env.SIGNAL_PORT || 3001;
+server.listen(PORT, () => {
+  console.log(`Signaling server running on port ${PORT}`);
+});

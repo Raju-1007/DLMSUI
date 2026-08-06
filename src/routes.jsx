@@ -67,6 +67,8 @@ import StudentTimeTable from './pages/StudentTimeTable'
 import AdminApproval from './pages/AdminApproval'
 import MeetingRoom from './components/MeetingRoom'
 import Layout from './Layout '
+import Library from './pages/Library'
+import LibraryAdmins from './pages/LibraryAdmins'
 
 export const router = createBrowserRouter([
   {
@@ -159,7 +161,16 @@ export const router = createBrowserRouter([
 
   { path: '/studenttimeTable', element: <StudentTimeTable /> },
   { path: '/adminApproval', element: <AdminApproval /> },
-  {path:"/meeting/:meetingId" ,element: <MeetingRoom /> }
+  {path:"/meeting/:meetingId" ,element: <MeetingRoom /> },
+    {path:"/librarey" ,element: <Library /> },
+    {path:"/library" ,element: <Library /> },
+    {path:"/libraryAdmin" ,element: <LibraryAdmins /> },
+    {path:"/libraryAdmins" ,element: <LibraryAdmins /> },
+
+
+    
+
+  
       ]
     }
 

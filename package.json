@@ -8,12 +8,16 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1",
     "@fullcalendar/daygrid": "^6.1.19",
     "@fullcalendar/interaction": "^6.1.19",
     "@fullcalendar/list": "^6.1.19",
     "@fullcalendar/react": "^6.1.19",
     "@fullcalendar/timegrid": "^6.1.19",
     "@jitsi/react-sdk": "^1.4.4",
+    "@mui/icons-material": "^9.2.0",
+    "@mui/material": "^9.2.0",
     "@reduxjs/toolkit": "^2.11.1",
     "@stomp/stompjs": "^7.3.0",
     "axios": "^1.7.2",

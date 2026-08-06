@@ -10,7 +10,7 @@ const PUBLIC_APIS = [
   "/login/getRoles",
   "/login/generate",
   "/login/forgot-password",
- 
+
 ];
 
 axios.interceptors.request.use(
@@ -41,36 +41,59 @@ axios.interceptors.request.use(
 
 axios.interceptors.response.use(
   (response) => {
-    
+
     return response;
   },
   async (error) => {
-   
+
+    console.log("Complete Error:", error);
+
+    console.log("Message:", error.message);
+
+    console.log("Code:", error.code);
+
+    console.log("Response:", error.response);
+
+    console.log("Status:", error.response?.status);
+    console.log("comfig:", error.config);
+
+
+
 
     const originalConfig = error.config;
+
+    console.log("isAxiosError:", axios.isAxiosError(error));
+    console.log("error:", error);
+    console.log("request:", error.request);
+    console.log("response:", error.response);
+    console.log("status:", error.response?.status);
+
     
 
-    if (error.response?.status === 401 && !originalConfig?._retry &&!PUBLIC_APIS.some(url => originalRequest.url?.includes(url)) ){
+    if (error.response?.status === 401 && !originalConfig?._retry && !PUBLIC_APIS.some(url => originalConfig.url?.includes(url))) {
       originalConfig._retry = true;
 
       try {
         const parsedData = JSON.parse(localStorage.getItem("loginDetails"));
 
-        if (!parsedData.userDetails?.token) throw new Error("No token");
+        if (!parsedData.userDetails?.token) {
+          throw new Error("No token");
+        }
 
-      
-        const res = await axios.get(
+
+
+        const res = await axios.post(
           `${import.meta.env.VITE_API_BASE_URL}/login/refresh`,
+          {},
           {
-            headers: {
-              Authorization: `Bearer ${parsedData.userDetails?.token}`
-            }
+            withCredentials: true
           }
         );
-      console.log(res, "::::::::::::::refresh response");
-        const newToken = rs?.data?.data?.token;
+
+        const newToken = res?.data?.accessToken;
 
         if (newToken) {
+          console.log("newtoken calleddddddddddddddddddddd", newToken);
           parsedData.userDetails.token = newToken;
           localStorage.setItem(
             "loginDetails",
@@ -86,8 +109,9 @@ axios.interceptors.response.use(
         throw new Error("Refresh  token failed");
 
       } catch (err) {
+          console.log("catch block called when in authInterceptor:::::::::::::::::::::::::::::::::::::::::::::::");
         localStorage.clear();
-         showError("Session expired. Please login again.");
+        showError("Session expired. Please login again.");
         window.location.href = "/";
         return Promise.reject(err);
       }

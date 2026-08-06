@@ -22,43 +22,43 @@ export default function Navbar() {
 
 
   const login = useSelector((state) => state.auth.user);
-    const { showError, showSuccess } = useMessage();
-  
-    const [profileValid, setProfileValid] = useState(null);
+  const { showError, showSuccess } = useMessage();
 
-    useEffect(() => {
-      const checkProfile = async () => {
-        let res;
-        try {
-  
-          if (userRole === "STUDENT") {
-             res = await getStudentUpdatePropfileDetails(login, showSuccess, showError);
-            
-          }
-  
-          else if (userRole === "ADMIN" || userRole === "TEACHER" || userRole === "SUPER_ADMIN") {
-             res = await getDepartmentUpdatePropfileDetails(login,  showSuccess, showError);
-           
-          }
-          if (res) {
-           const isValid =
-          res !== null ||
-          res !== undefined ||
-          res !== "" 
-          
+  const [profileValid, setProfileValid] = useState(null);
 
-          setProfileValid(isValid )
-          }else{
-            setProfileValid(false);
-          }
-         
-        } catch (err) {
+  useEffect(() => {
+    const checkProfile = async () => {
+      let res;
+      try {
+
+        if (userRole === "STUDENT") {
+          res = await getStudentUpdatePropfileDetails(login, showSuccess, showError);
+
+        }
+
+        else if (userRole === "ADMIN" || userRole === "TEACHER" || userRole === "SUPER_ADMIN") {
+          res = await getDepartmentUpdatePropfileDetails(login, showSuccess, showError);
+
+        }
+        if (res) {
+          const isValid =
+            res !== null ||
+            res !== undefined ||
+            res !== ""
+
+
+          setProfileValid(isValid)
+        } else {
           setProfileValid(false);
         }
-      };
-  
-      checkProfile();
-    }, [login, showError]);
+
+      } catch (err) {
+        setProfileValid(false);
+      }
+    };
+
+    checkProfile();
+  }, [login]);
 
 
   const fallbackNotifications = [
@@ -93,82 +93,86 @@ export default function Navbar() {
       });
   }, []);
 
-  const doLogout =  async() => {
-    const result = logout();
-    if (result) {
+  const doLogout = async () => {
+  try {
+
+    if (login?.userDetails?.role != "STUDENT") {
       await handleLogoutActivity();
+    }
+
+    const result = await logout();
+
+    if (result) {
       nav("/");
+    }
+
+  } catch (error) {
+    console.error("Logout Error:", error);
+  }
+};
+
+  const handleLogoutActivity = async () => {
+    try {
+      await axios.post(
+        import.meta.env.VITE_API_BASE_URL + "/login/login/logout",
+        {
+          loginId: login?.userDetails?.loginid,
+          adhaar: login?.userDetails?.adhaarValue
+        }
+      );
+    } catch (err) {
+      showError(err);
     }
   };
 
- const handleLogoutActivity = async () => {
-  try {
-    await axios.post(
-      import.meta.env.VITE_API_BASE_URL + "/login/login/logout",
-      {
-        loginId: login?.userDetails?.loginid,
-        adhaar: login?.userDetails?.adhaarValue
-      }
-    );
-  } catch (err) {
-     showError(err);
-  }
-};
+  const handleViewProfile = () => {
+    if (userRole === "STUDENT") {
+      safeNavigate("/student-profile");
+    }
+    else if (userRole === "TEACHER") {
+      safeNavigate("/teacherProfile");
+    }
+    else if (userRole === "ADMIN") {
+      safeNavigate("/adminProfile");
+    }
+    else if (userRole === "SUPER_ADMIN") {
+      safeNavigate("/superAdminProfile");
+    }
+  };
 
-  //   React.useEffect(() => {
-  //   if (showPopup) {
-  //     fetchNotifications();
-  //   }
-  // }, [showPopup]);
-
-const handleViewProfile = () => {
-  if (userRole === "STUDENT") {
-    safeNavigate("/student-profile");
-  } 
-  else if (userRole === "TEACHER") {
-    safeNavigate("/teacherProfile");
-  } 
-  else if (userRole === "ADMIN") {
-    safeNavigate("/adminProfile");
-  } 
-  else if (userRole === "SUPER_ADMIN") {
-    safeNavigate("/superAdminProfile");
-  }
-};
-
-const handleUpdateProfile = () => {
-  if (userRole === "STUDENT") {
-    safeNavigate("/updateProfile");
-  } else if (userRole === "TEACHER" || userRole === "ADMIN" || userRole === "SUPER_ADMIN") {
-    safeNavigate("/TeacherUpdateProfile");
-  }
-}; 
+  const handleUpdateProfile = () => {
+    if (userRole === "STUDENT") {
+      safeNavigate("/updateProfile");
+    } else if (userRole === "TEACHER" || userRole === "ADMIN" || userRole === "SUPER_ADMIN") {
+      safeNavigate("/TeacherUpdateProfile");
+    }
+  };
 
 
- const safeNavigate = (path) => {
-  console.log("Profile Validity on Navigation Attempt:", profileValid); 
+  const safeNavigate = (path) => {
+    console.log("Profile Validity on Navigation Attempt:", profileValid);
     if (!profileValid) {
       showError("Please update profile");
       return;
     }
     nav(path);
-  };  
+  };
 
-const navigateLoginActivity=()=>{
-   if (userRole === "STUDENT") {
-    // nav("/studentloginActivity");
-  } 
-  else if (userRole === "TEACHER") {
-    //  nav("/teacherLoginActivity");
-  } 
-  else if (userRole === "ADMIN") {
-    safeNavigate("/adminLoginActivity");
-  } 
-  else if (userRole === "SUPER_ADMIN") {
-    safeNavigate("/superAdminloginActivity");
-  }
+  const navigateLoginActivity = () => {
+    if (userRole === "STUDENT") {
+      // nav("/studentloginActivity");
+    }
+    else if (userRole === "TEACHER") {
+      //  nav("/teacherLoginActivity");
+    }
+    else if (userRole === "ADMIN") {
+      safeNavigate("/adminLoginActivity");
+    }
+    else if (userRole === "SUPER_ADMIN") {
+      safeNavigate("/superAdminloginActivity");
+    }
 
-};
+  };
 
 
 
@@ -191,16 +195,16 @@ const navigateLoginActivity=()=>{
 
         {/* LOGO */}
         {/* <Link to="/dashboard"> */}
-        <img
-          src="/images/cr_logo.png"
-          alt="CR Logo"
+        {/* <img
+          // src="/images/cr_logo.png"
+          // alt="CR Logo"
           style={{
             height: 30,  // adjust for perfect size
             objectFit: "contain",
             cursor: "pointer",
             marginLeft: 5
           }}
-        />
+        /> */}
         {/* </Link> */}
 
         {/* Optional: remove or keep DLMS text */}
@@ -223,7 +227,7 @@ const navigateLoginActivity=()=>{
       </div>
 
       {/* RIGHT SECTION */}
-      <div style={{ display: 'flex', gap: 15, alignItems: 'center',paddingRight:'40px' }}>
+      <div style={{ display: 'flex', gap: 15, alignItems: 'center', paddingRight: '40px' }}>
         {/* <Link to='/notifications' style={{ fontSize: 20 }}>🔔</Link> */}
         <span
           style={{ fontSize: 20, cursor: "pointer" }}

@@ -116,9 +116,11 @@ export default function TeacherUpdateProfile() {
       : 'Admin123'
 
     };
-   if(payload.techerServiceId){
-       await verfiyTeacherServiceId(payload.techerServiceId);
-   }
+     loginDetails?.userDetails?.role === "TEACHER" &&
+payload.techerServiceId
+    ? await verfiyTeacherServiceId(payload.techerServiceId)
+    : null;
+    
     await axios.post(
       "http://localhost:8080/login/teacher-update-profile",
       payload,

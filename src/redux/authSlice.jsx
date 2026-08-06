@@ -11,7 +11,11 @@ export const loginUserThunk = createAsyncThunk(
     try {
       const res = await axios.post(
         import.meta.env.VITE_API_BASE_URL + "/login/getloginData",
-        payload
+        payload,
+        {
+        withCredentials: true
+    }
+
       );
       if (res.data.status === "error" || (res?.data?.message && res.data.message.includes("Invalid Password"))
       ) {

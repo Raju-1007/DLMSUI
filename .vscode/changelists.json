@@ -3,11 +3,31 @@
     {
       "name": "Default",
       "files": [
-        "src/pages/Login.jsx",
+        ".env",
         ".vscode/changelists.json",
-        "src/redux/authSlice.jsx",
+        "src/components/Navbar.jsx",
+        "src/pages/Login.jsx",
+        "src/pages/QuizPage.jsx",
+        "src/pages/Dashboard.jsx",
+        "src/redux/axiosSetup.jsx",
+        "src/routes.jsx",
         "src/components/Sidebar.jsx",
-        "src/components/Navbar.jsx"
+        "src/styles/theme.css",
+        "components/Navbar.jsx",
+        "src/lib/auth.js",
+        "src/redux/authSlice.jsx",
+        "Backend/package-lock.json",
+        "src/pages/UpdateProfile.jsx",
+        "src/pages/TeacherUpdateProfile.jsx",
+        "Backend/Server.js",
+        "package-lock.json",
+        "package.json",
+        "src/components/MeetingRoom.jsx",
+        "src/pages/StudentTimeTable.jsx",
+        "src/lib/libraryRoles.js",
+        "src/pages/Library.jsx",
+        "src/pages/LibraryAdmins.jsx",
+        "index.html"
       ]
     }
   ],

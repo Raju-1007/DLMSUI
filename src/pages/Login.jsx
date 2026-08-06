@@ -28,7 +28,7 @@ export default function Login() {
   const [departmentId, setDepartmentId] = useState("");
 
 
-  const [captchaValue, setCaptchaValue] = useState("");
+  const [captchaForgotValue, setCaptchaValue] = useState("");
   const [captchaId, setCaptchaId] = useState("");
   const [captchaInput, setCaptchaInput] = useState("");
 
@@ -41,12 +41,16 @@ export default function Login() {
   const [confirmPasswordShown, setConfirmPasswordShown] = useState(false);
   const [passwordToggleClass, setPasswordToggleClass] = useState("")
   const [email, setEmail] = useState("");
+  const [forgotCaptchaValue, setForgotCaptchaValue] = useState("");
+const [forgotCaptchaId, setForgotCaptchaId] = useState("");
+const [forgotCaptchaInput, setForgotCaptchaInput] = useState("");
+
 
   /* ================= LOAD ================= */
   useEffect(() => {
     loadCaptcha();
     loadRoles();
-  }, []);
+  }, [showForgot,loginType]);
 
   const loadRoles = async () => {
     const res = await axios.get(
@@ -64,6 +68,21 @@ export default function Login() {
     setCaptchaValue(res.data.captchaValue);
     setCaptchaId(res.data.captchaId);
   };
+
+
+  const loadCaptchaForResetpassword = async () => {
+  const res = await axios.get(
+    import.meta.env.VITE_API_BASE_URL + "/login/generate"
+  );
+
+  setForgotCaptchaValue(res.data.captchaValue);
+  setForgotCaptchaId(res.data.captchaId);
+
+  };
+
+
+
+
 
   useEffect(() => {
     if (passwordShown == true) {
@@ -103,7 +122,9 @@ payload = {
     if (loginType === "department") {
       if (!role) return showError("Select role");
       if (!departmentId) return showError("Login ID not generated");
+        
       if (!/^\d{4}$/.test(captchaInput))
+       
         return showError("Captcha must be 4 digits");
 
     
@@ -203,28 +224,58 @@ if (loginType === "department") {
 
   /* ================= FORGOT ================= */
   const handleForgotSubmit = async () => {
-    if (!/^\d{12}$/.test(fpAadhar))
-      return showError("Aadhaar must be 12 digits");
-    if (fpPassword !== fpConfirmPassword)
-      return showError("Passwords do not match");
-    if (!/^\d{4}$/.test(captchaInput))
-      return showError("Captcha must be 4 digits");
+  if (!/^\d{12}$/.test(fpAadhar))
+    return showError("Aadhaar must be 12 digits");
 
-    await axios.post(
+  if (fpPassword !== fpConfirmPassword)
+    return showError("Passwords do not match");
+
+  if (!/^\d{4}$/.test(forgotCaptchaInput))
+    return showError("Captcha must be 4 digits");
+
+  try {
+    const res=await axios.post(
       import.meta.env.VITE_API_BASE_URL + "/login/forgot-password",
       {
         aadhar: fpAadhar,
         newPassword: fpPassword,
         confirmPassword: fpConfirmPassword,
         email: email,
-        captchaId,
-        captchaInput
+        captchaId: forgotCaptchaId,
+        captchaInput: forgotCaptchaInput,
       }
     );
 
+    
+    if(res?.data?.message.includes("Password updated successfully") || res?.data?.status === "success"){
+
     showSuccess("Password updated");
+
     setShowForgot(false);
-  };
+
+    // Optional: Clear fields
+    setFpAadhar("");
+    setFpPassword("");
+    setFpConfirmPassword("");
+    setEmail("");
+    setForgotCaptchaInput("");
+
+    // Generate a new captcha
+
+    }else{
+      showError(res?.data?.message);
+      
+
+    }
+
+  } catch (error) {
+    showError(
+      error?.response?.data?.message
+    );
+
+  
+  }
+};
 
   /* ================= UI ================= */
   return (
@@ -292,7 +343,7 @@ if (loginType === "department") {
               <div className="captachInputrow">
                 <div className="captcha-row">
                   <div className="captcha-box">
-                    {captchaValue.split("").map((c, i) => (
+                    {captchaForgotValue.split("").map((c, i) => (
                       <span key={i}>{c}</span>
                     ))}
                   </div>
@@ -360,7 +411,7 @@ if (loginType === "department") {
               <div className="captachInputrow">
                 <div className="captcha-row">
                   <div className="captcha-box">
-                    {captchaValue.split("").map((c, i) => (
+                    {captchaForgotValue.split("").map((c, i) => (
                       <span key={i}>{c}</span>
                     ))}
                   </div>
@@ -387,7 +438,7 @@ if (loginType === "department") {
       </div>
 
       {/* FORGOT PASSWORD */}
-      {showForgot && (
+      {showForgot &&   (loginType.includes("student") || loginType.includes("department")) && (
         <div className="modal-overlay" onClick={() => setShowForgot(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <h2>Forgot Password</h2>
@@ -432,15 +483,15 @@ if (loginType === "department") {
             <input
               placeholder="Enter captcha"
               maxLength={4}
-              value={captchaInput}
+              value={forgotCaptchaInput}
               onChange={(e) =>
-                setCaptchaInput(e.target.value.replace(/\D/g, ""))
+                setForgotCaptchaInput(e.target.value.replace(/\D/g, ""))
               }
             />
 
             <div className="captcha-row">
-              <div className="captcha-boxx">{captchaValue}</div>
-              <button onClick={loadCaptcha}>↻</button>
+              <div className="captcha-boxx">{forgotCaptchaValue}</div>
+              <button onClick={loadCaptchaForResetpassword}>↻</button>
             </div>
 
             <button className="login-btn" onClick={handleForgotSubmit}>
@@ -452,4 +503,5 @@ if (loginType === "department") {
     </div>
   );
 }
+
 

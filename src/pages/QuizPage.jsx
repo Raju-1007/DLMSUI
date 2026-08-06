@@ -67,9 +67,7 @@ export default function QuizPage() {
     );
   };
 
-  // --------------------------------------------------
-  // SELECT ANSWER (IN_PROGRESS)
-  // --------------------------------------------------
+
   const selectAnswer = async (questionId, option) => {
 
     setAnswers((prev) => ({
@@ -91,7 +89,7 @@ export default function QuizPage() {
   // --------------------------------------------------
   const submitQuiz = async () => {
     try {
-      const res = await axios.post(
+      let res = await axios.post(
         import.meta.env.VITE_API_BASE_URL + "/notify/submitquiz",
         {
           assessmentId: 1,
@@ -100,7 +98,7 @@ export default function QuizPage() {
         }
       );
 
-      const score = res.data;
+      let score = res.data;
 
       navigate(`/chapter/${assessmentId}/result`, {
         state: { score, state }
@@ -112,14 +110,14 @@ export default function QuizPage() {
     }
   };
 
- const isExpired = () => {
-  if (!questions || questions.length === 0) return false;
+  const isExpired = () => {
+    if (!questions || questions.length === 0) return false;
 
-  const end = new Date(questions[0].endDateTime);
-  const now = new Date();
+    let end = new Date(questions[0].endDateTime);
+    let now = new Date();
 
-  return now > end;
-};
+    return now > end;
+  };
 
   // --------------------------------------------------
   // UI
@@ -164,14 +162,14 @@ export default function QuizPage() {
                   {["A", "B", "C", "D"].map((opt) => (
                     <label
                       key={opt}
-                      className={`quiz-option ${answers[q.id] === opt ? "active" : ""
+                      className={`quiz-option ${answers[q.questionId] === opt ? "active" : ""
                         }`}
                     >
                       <input
                         type="radio"
-                        name={`q-${q.questionId}`}   // ✅ unique per question
-                        checked={answers[q.questionId] === opt}  // ✅ same key
-                        onChange={() => selectAnswer(q.questionId, opt)} // ✅ same key
+                        name={`q-${q.questionId}`}
+                        checked={answers[q.questionId] === opt}
+                        onChange={() => selectAnswer(q.questionId, opt)}
                       />
                       {q[`option${opt}`]}
                     </label>
@@ -179,20 +177,22 @@ export default function QuizPage() {
                 </div>
               )))
 
-  };
+            };
 
             {/* SUBMIT */}
             <div className="quiz-footer">
-              <button
-                className="quiz-submit"
-                disabled={
-                  questions.length === 0 ||
-                  Object.keys(answers).length !== questions.length
-                }
-                onClick={submitQuiz}
-              >
-                Submit Assessment
-              </button>
+              {!isExpired() && (
+                <button
+                  className="quiz-submit"
+                  disabled={
+                    questions.length === 0 ||
+                    Object.keys(answers).length !== questions.length
+                  }
+                  onClick={submitQuiz}
+                >
+                  Submit Assessment
+                </button>
+              )}
             </div>
 
           </div>

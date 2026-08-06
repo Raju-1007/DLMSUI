@@ -1,37 +1,15 @@
-// import React from 'react'
-// import { Link } from 'react-router-dom'
-// import { logout, role } from '../lib/auth'
-// import { useNavigate } from "react-router-dom";
 
-// export default function Navbar() {
-//     const nav = useNavigate();
-//     const  doLogout=()=>{
-//         const result= logout();
-//         if(result){
-//          nav("/");
-//          }
-
-//     }
-//     return (
-
-//         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px', background: '#fff', borderBottom: '1px solid #e5e7eb', position: 'sticky', top: 0, zIndex: 20 }}>
-//             <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}><Link to='/dashboard' style={{ fontWeight: 700, textDecoration: 'none', color: '#111' }}>DLMS</Link>
-//             {/* <Link to='/courses'>Courses</Link><Link to='/progress'>Progress</Link> */}
-//                 {role() === 'TEACHER' && <Link to='/teacher/dashboard'>Teacher</Link>}
-//                 {role() === 'ADMIN' && <Link to='/admin/dashboard'>Admin</Link>}</div>
-//             <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}><Link to='/notifications'>🔔</Link><Link to='/help'>💬</Link>
-//                 <button className='btn' onClick={doLogout}>Logout</button></div></div>)
-// }
 
 
 import React, { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { logout, role } from '../lib/auth'
+
 import { useNavigate } from "react-router-dom";
 import { FaUserCircle, FaUser, FaCog, FaHistory, FaSignOutAlt } from "react-icons/fa";
 import { http } from '../api/axios';
 import { useSelector } from 'react-redux';
 import axios from 'axios';
+import { logout } from '../src/lib/auth';
 
 
 export default function Navbar() {
@@ -41,6 +19,8 @@ export default function Navbar() {
   const [items, setItems] = React.useState([]);
   const userRole = role();
   const login=useSelector((state)=>state.auth.user);
+  const[loginDetails,setLoginDetails]=useState(login);
+
 
 
   const fallbackNotifications = [
@@ -74,19 +54,32 @@ export default function Navbar() {
         setItems(fallbackNotifications);
       });
   }, []);
+ 
+  const doLogout = async () => {
 
-  const doLogout =  async() => {
-    const result = logout();
-    if (result) {
-      await handleLogoutActivity();
-      nav("/");
+    if (!loginDetails?.userDetails) {
+        
+        return;
     }
-  };
+
+    
+
+    const result = await  logout();
+
+    if (result) {
+        await handleLogoutActivity();
+        nav("/");
+    }
+    else{
+        console.log("failed logout::::::::::::::::::::::::::::::::::::");
+    }
+};
 
  const handleLogoutActivity = async () => {
+            
   try {
     await axios.post(
-      import.meta.env.VITE_API_BASE_URL + "/login/login/logout",
+      import.meta.env.VITE_API_BASE_URL + "/login/logout",
       {
         loginId: login?.userDetails?.loginid,
         adhaar: login?.userDetails?.adhaarValue

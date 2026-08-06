@@ -18,6 +18,7 @@ import {
   MdSchedule,
   MdTimelapse,
   MdSettings,
+  MdLocalLibrary,
 
 
 } from "react-icons/md";
@@ -39,6 +40,7 @@ export default function Sidebar() {
 
         if (userRole === "STUDENT") {
           const res = await getStudentUpdatePropfileDetails(login);
+
           console.log("Profile Validity Response  sidebar:", res);
           setProfileValid(res);
         }
@@ -85,6 +87,7 @@ export default function Sidebar() {
       { icon: <MdHelpOutline />, label: "Help Desk", to: "/help" },
       { icon: <MdTimelapse />, label: " My Attendance", to: "/studentAttendance" },
       { icon: <MdSchedule />, label: "MyTimetable", to: "/studenttimeTable" },
+            { icon: <MdLocalLibrary  />, label: "Library", to: "/library" },
     ],
 
     ADMIN: [
@@ -109,6 +112,11 @@ export default function Sidebar() {
       { icon: <MdSettings />, label: "Settings", to: "/admin/settings" },
       //     // { icon: <MdSettings />, label: "ManageTecahers", to: "/admin/adminhandileteachers" },
       //     //  { icon: <MdSettings />, label: "ManageStudents", to: "/admin/AdminManageStudents" },
+
+                  { icon: <MdLocalLibrary  />, label: "Library Admin", to: "/libraryAdmins" },
+
+
+      
     ],
 
     TEACHER: [
@@ -126,6 +134,7 @@ export default function Sidebar() {
       { icon: <MdNotificationsNone />, label: "Notifications", to: "/teacher/notifications" },
       { icon: <MdHelpOutline />, label: "Help Desk", to: "/teacher/Helpdisk" },
       { icon: <MdNotificationsNone />, label: "MY Notifications", to: "/receiveNotifications" },
+      { icon: <MdLocalLibrary />, label: "Librarey", to: "/librarey" },
       //  { icon: <MdSchedule />, label: "Sechudule Meeting", to: "/mytimetable" },
     ],
 
